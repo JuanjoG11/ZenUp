@@ -103,6 +103,18 @@ const DB = {
   getObj: (key, def = {}) => { try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; } }
 };
 
+function getSemanaNum(fechaStr) {
+  if (!fechaStr) return 1;
+  const parts = fechaStr.split('-');
+  if (parts.length < 3) return 1;
+  const dayOfMonth = parseInt(parts[2], 10);
+  if (isNaN(dayOfMonth)) return 1;
+  if (dayOfMonth <= 7) return 1;
+  if (dayOfMonth <= 14) return 2;
+  if (dayOfMonth <= 21) return 3;
+  return 4;
+}
+
 function loadTrabajadores() { return DB.get('ap_trabajadores', []); }
 function saveTrabajadores(d) { DB.set('ap_trabajadores', d); }
 
@@ -433,7 +445,9 @@ function renderDashboard() {
     }).join('') + '</div>';
 }
 
-// ── DASHBOARD ADMIN ("ALGO BIEN CHIMBA") ─────────────────────
+// ── DASHBOARD ADMIN (DRILL-DOWN: KPIs → Asesor → Cliente) ────
+let adminSemanaFiltro = 1;
+
 function renderAdminDashboard() {
   const todosClientes = DB.get('ap_clientes', []);
   const todasVisitas = DB.get('ap_visitas', []);
@@ -441,90 +455,239 @@ function renderAdminDashboard() {
   const hoy = todayISO();
   const diaHoy = todayDia();
 
-  const visitasHoyTotal = todasVisitas.filter(v => v.fecha === hoy);
-  const completadasTotal = visitasHoyTotal.filter(v => v.estado === 'completada').length;
-  const clientesHoyTotal = todosClientes.filter(c => c.dia === diaHoy).length;
-  const ventaEquipo = visitasHoyTotal.filter(v => v.estado === 'completada')
-    .reduce((s, v) => s + (v.totalPedido || 0), 0);
+  // KPIs principales
+  const visitasHoy = todasVisitas.filter(v => v.fecha === hoy);
+  const completadasHoy = visitasHoy.filter(v => v.estado === 'completada').length;
+  const clientesHoy = todosClientes.filter(c => c.dia === diaHoy).length;
+  const ventaHoy = visitasHoy.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
+  const pendientesHoy = todosClientes.filter(c => c.dia === diaHoy && !visitasHoy.some(v => v.clienteId === c.id && v.estado === 'completada')).length;
+  const ventaTotal = todasVisitas.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
+  const pctGlobal = clientesHoy ? Math.round((completadasHoy / clientesHoy) * 100) : 0;
 
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-value">${trabajadores.length}</div>
-      <div class="stat-label">Asesores Activos</div>
-    </div>
     <div class="stat-card green">
-      <div class="stat-value">${completadasTotal} / ${clientesHoyTotal}</div>
-      <div class="stat-label">Visitas Equipo Hoy</div>
+      <div class="stat-value">${fmt$(ventaHoy)}</div>
+      <div class="stat-label">Venta Hoy</div>
+    </div>
+    <div class="stat-card ${pendientesHoy > 0 ? 'red' : 'green'}">
+      <div class="stat-value">${pendientesHoy}</div>
+      <div class="stat-label">Pendientes Hoy</div>
     </div>
     <div class="stat-card blue">
-      <div class="stat-value">${fmt$(ventaEquipo)}</div>
-      <div class="stat-label">Ventas Equipo Hoy</div>
+      <div class="stat-value">${fmt$(ventaTotal)}</div>
+      <div class="stat-label">Acumulado Mes</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value">${todosClientes.length}</div>
-      <div class="stat-label">Total Clientes Base</div>
+      <div class="stat-value">${pctGlobal}%</div>
+      <div class="stat-label">Cumplimiento Día</div>
     </div>
   `;
 
-  // Ranking y Tarjetas de cada Trabajador
+  // Ocultar bloque de semanas redundante
+  const semanaDiv = document.getElementById('dashWeekProgress');
+  if (semanaDiv) semanaDiv.innerHTML = '';
+
+  // Cuadrícula interactiva de Asesores
   const dashDiv = document.getElementById('dashTodayVisits');
-  
+  if (!dashDiv) return;
+
   if (trabajadores.length === 0) {
-    dashDiv.innerHTML = emptyState('No hay trabajadores registrados', 'Haz clic en "Trabajadores / Equipo" en el menú para agregar el primer asesor.');
-  } else {
-    let cardsHtml = '<div style="margin-bottom:12px;font-weight:700;font-size:1.1rem;color:var(--gray-900)">📊 Estado en Tiempo Real por Asesor</div><div class="team-grid">';
-    
-    trabajadores.forEach(t => {
-      const clsTrabajador = todosClientes.filter(c => c.trabajadorId === t.cedula);
-      const clsHoyTrabajador = clsTrabajador.filter(c => c.dia === diaHoy);
-      
-      const vtsHoyTrabajador = todasVisitas.filter(v => v.fecha === hoy && clsTrabajador.some(c => c.id === v.clienteId));
-      const vtsCompletadas = vtsHoyTrabajador.filter(v => v.estado === 'completada').length;
-      const ventaTrabajador = vtsHoyTrabajador.filter(v => v.estado === 'completada').reduce((s,v) => s + (v.totalPedido || 0), 0);
+    dashDiv.innerHTML = emptyState('No hay asesores registrados', 'Ve a "Trabajadores / Equipo" en el menú para agregar tu equipo.');
+    return;
+  }
 
-      const pct = clsHoyTrabajador.length ? Math.round((vtsCompletadas / clsHoyTrabajador.length) * 100) : 0;
+  let html = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin: 16px 0 12px 0;">
+      <span style="font-size:1.05rem; font-weight:800; color:var(--gray-900);">👥 Equipo de Asesores</span>
+      <small style="color:var(--gray-600);">👇 Toca un asesor para filtrar por días/semanas y ver sus clientes</small>
+    </div>
+    <div class="admin-vendors-grid">`;
 
-      cardsHtml += `
-        <div class="worker-card">
-          <div class="worker-avatar">${t.nombre[0].toUpperCase()}</div>
-          <div class="worker-info">
-            <div class="worker-name">${t.nombre}</div>
-            <div class="worker-meta">CC: ${t.cedula} &nbsp;·&nbsp; ${t.zona || 'Sin zona'}</div>
-            <div style="margin-top:6px;font-size:0.78rem;color:var(--gray-700)">
-              Visitas hoy: <strong>${vtsCompletadas} de ${clsHoyTrabajador.length}</strong> (${pct}%)
-            </div>
-            <div class="progress-bar-wrap" style="margin-top:4px;height:6px">
-              <div class="progress-bar" style="width:${pct}%"></div>
-            </div>
+  trabajadores.forEach(t => {
+    const cls = todosClientes.filter(c => c.trabajadorId === t.cedula);
+    const clsHoy = cls.filter(c => c.dia === diaHoy);
+    const vts = todasVisitas.filter(v => cls.some(c => c.id === v.clienteId));
+    const vtsHoy = vts.filter(v => v.fecha === hoy);
+    const doneHoy = vtsHoy.filter(v => v.estado === 'completada').length;
+    const pendVend = clsHoy.length - doneHoy;
+    const $hoy = vtsHoy.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
+    const $acum = vts.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
+    const pct = clsHoy.length ? Math.round((doneHoy / clsHoy.length) * 100) : 0;
+    const inicial = (t.nombre || 'A')[0].toUpperCase();
+
+    html += `
+      <div class="admin-vendor-card" onclick="openAsesorPanel('${t.cedula}')">
+        <div class="avc-top">
+          <div class="avc-avatar">${inicial}</div>
+          <div class="avc-info">
+            <div class="avc-name">${t.nombre}</div>
+            <div class="avc-zona">CC: ${t.cedula} · ${t.zona || 'Sin zona'}</div>
           </div>
-          <div class="worker-stats">
-            <div class="worker-sales">${fmt$(ventaTrabajador)}</div>
-            <div class="worker-visits">${clsTrabajador.length} Clientes total</div>
+          <div class="avc-badge ${pendVend > 0 ? 'warn' : 'ok'}">
+            ${pendVend > 0 ? `⚠️ ${pendVend} pend.` : '✓ Al día'}
+          </div>
+        </div>
+        <div class="avc-progress-wrap">
+          <div class="avc-progress-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="avc-bottom">
+          <div class="avc-metric">
+            <span class="lbl">Visitas Hoy</span>
+            <span class="val">${doneHoy} / ${clsHoy.length} (${pct}%)</span>
+          </div>
+          <div class="avc-metric text-right">
+            <span class="lbl">Venta Hoy</span>
+            <span class="val highlight">${fmt$($hoy)}</span>
+          </div>
+        </div>
+        <div class="avc-footer">
+          <span>Acumulado: <strong>${fmt$($acum)}</strong> (${cls.length} clientes)</span>
+          <span class="avc-arrow">Ver detalle ›</span>
+        </div>
+      </div>`;
+  });
+
+  html += '</div>';
+  dashDiv.innerHTML = html;
+}
+
+function setAdminSemana(semanaNum) {
+  adminSemanaFiltro = semanaNum;
+  renderAdminDashboard();
+}
+
+// ── DRILL-DOWN: PANEL DEL ASESOR ─────────────────────────────
+let asesorPanelSemana = 1;
+let asesorPanelDia = '';
+
+function openAsesorPanel(cedula) {
+  const trabajadores = loadTrabajadores();
+  const t = trabajadores.find(x => x.cedula === cedula);
+  if (!t) return;
+
+  const todosClientes = DB.get('ap_clientes', []);
+  const todasVisitas = DB.get('ap_visitas', []);
+  const clsAsesor = todosClientes.filter(c => c.trabajadorId === cedula);
+  const vtsAsesor = todasVisitas.filter(v => clsAsesor.some(c => c.id === v.clienteId));
+
+  // Visitas del asesor en la semana seleccionada (Semana 1, 2, 3, 4 o 'ALL')
+  const vtsSemana = vtsAsesor.filter(v => {
+    if (asesorPanelSemana === 'ALL') return true;
+    const sem = v.semana || getSemanaNum(v.fecha);
+    return sem === asesorPanelSemana;
+  });
+
+  // Clientes del día seleccionado
+  const clsDia = clsAsesor.filter(c => c.dia === asesorPanelDia);
+  const vtsDia = vtsSemana.filter(v => {
+    const cl = clsAsesor.find(c => c.id === v.clienteId);
+    return cl && cl.dia === asesorPanelDia;
+  });
+
+  const completadasDia = vtsDia.filter(v => v.estado === 'completada');
+  const ventaDia = completadasDia.reduce((s, v) => s + (v.totalPedido || 0), 0);
+  const ventaAcumMes = vtsAsesor.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
+
+  // Header info
+  document.getElementById('asesorPanelAvatar').textContent = (t.nombre || 'A')[0].toUpperCase();
+  document.getElementById('asesorPanelNombre').textContent = t.nombre;
+  document.getElementById('asesorPanelMeta').textContent = `CC: ${t.cedula} · ${t.zona || 'Sin zona'} · ${clsAsesor.length} clientes en base`;
+
+  // Render week pills (Semana 1, 2, 3, 4 + Total Mes)
+  const semanasDiv = document.getElementById('asesorPanelSemanas');
+  if (semanasDiv) {
+    semanasDiv.innerHTML = [1, 2, 3, 4].map(s => `
+      <button class="ap-pill ${s === asesorPanelSemana ? 'active' : ''}" onclick="changeAsesorSemana('${cedula}', ${s})">Semana ${s}</button>
+    `).join('') + `
+      <button class="ap-pill ${asesorPanelSemana === 'ALL' ? 'active' : ''}" onclick="changeAsesorSemana('${cedula}', 'ALL')" style="font-weight:700;">📊 Total Mes</button>
+    `;
+  }
+
+  // Render day pills
+  const diasDiv = document.getElementById('asesorPanelDias');
+  if (diasDiv) {
+    diasDiv.innerHTML = DIAS.map(d => {
+      const cnt = clsAsesor.filter(c => c.dia === d).length;
+      return `<button class="ap-pill ${d === asesorPanelDia ? 'active' : ''}" onclick="changeAsesorDia('${cedula}', '${d}')">${diasLabel(d)} (${cnt})</button>`;
+    }).join('');
+  }
+
+  // Label para el KPI
+  const lblVentaSem = asesorPanelSemana === 'ALL' ? 'Venta Acum. Días' : `Venta Día (Sem ${asesorPanelSemana})`;
+
+  // KPIs panel
+  document.getElementById('asesorPanelKpis').innerHTML = `
+    <div class="ap-kpi-card">
+      <div class="ap-kpi-num">${clsDia.length}</div>
+      <div class="ap-kpi-lbl">Clientes ${diasLabel(asesorPanelDia)}</div>
+    </div>
+    <div class="ap-kpi-card green">
+      <div class="ap-kpi-num">${completadasDia.length}</div>
+      <div class="ap-kpi-lbl">Visitados</div>
+    </div>
+    <div class="ap-kpi-card orange">
+      <div class="ap-kpi-num">${fmt$(ventaDia)}</div>
+      <div class="ap-kpi-lbl">${lblVentaSem}</div>
+    </div>
+    <div class="ap-kpi-card blue">
+      <div class="ap-kpi-num">${fmt$(ventaAcumMes)}</div>
+      <div class="ap-kpi-lbl">Acumulado Mes (Sem 1-4)</div>
+    </div>
+  `;
+
+  // Render client list
+  const listDiv = document.getElementById('asesorPanelClientes');
+  if (clsDia.length === 0) {
+    listDiv.innerHTML = '<div style="text-align:center; padding:30px; color:var(--gray-500); background:white; border-radius:12px;">Sin clientes asignados para este día</div>';
+  } else {
+    listDiv.innerHTML = clsDia.map(c => {
+      // Visita del cliente en la semana seleccionada
+      const visSemana = vtsSemana.find(v => v.clienteId === c.id);
+      const est = visSemana ? visSemana.estado : 'sin_visita';
+      
+      const badgeHtml = est === 'completada' 
+        ? '<span class="ap-cl-badge done">✅ Visitado</span>'
+        : est === 'pendiente'
+        ? '<span class="ap-cl-badge pend">⏳ Pendiente</span>'
+        : '<span class="ap-cl-badge">⚪ Sin visita</span>';
+
+      const montoSemana = visSemana && visSemana.estado === 'completada' ? fmt$(visSemana.totalPedido || 0) : '-';
+      
+      // Total acumulado del cliente en todas las semanas del mes
+      const acumCliente = vtsAsesor
+        .filter(v => v.clienteId === c.id && v.estado === 'completada')
+        .reduce((s, v) => s + (v.totalPedido || 0), 0);
+
+      return `
+        <div class="ap-client-item" onclick="closeModal('modalAsesorPanel'); openHistorialModal('${c.id}');">
+          <div class="ap-ci-left">
+            <div class="ap-ci-title">${c.nombre}</div>
+            <div class="ap-ci-sub">Cód: ${c.codigo} · ${c.poblacion || c.zona || 'Pereira'}</div>
+          </div>
+          <div class="ap-ci-right">
+            ${badgeHtml}
+            <div style="text-align:right">
+              <div class="ap-ci-monto">${montoSemana} <small style="font-size:0.7rem; color:#64748B; font-weight:normal">(Sem ${asesorPanelSemana})</small></div>
+              ${acumCliente > 0 ? `<div style="font-size:0.75rem; font-weight:700; color:#1565C0">Acum. Mes: ${fmt$(acumCliente)}</div>` : ''}
+            </div>
+            <div class="ap-ci-arrow">📊</div>
           </div>
         </div>
       `;
-    });
-
-    cardsHtml += '</div>';
-    dashDiv.innerHTML = cardsHtml;
+    }).join('');
   }
 
-  // Progreso semanal consolidado
-  const semanaDiv = document.getElementById('dashWeekProgress');
-  semanaDiv.innerHTML = '<div class="week-progress-grid">' +
-    DIAS.map(dia => {
-      const cnt = todosClientes.filter(c => c.dia === dia).length;
-      const done = todasVisitas.filter(v => {
-        const cl = todosClientes.find(c => c.id === v.clienteId);
-        return cl && cl.dia === dia && v.estado === 'completada';
-      }).length;
-      const isToday = dia === diaHoy;
-      return `<div class="week-day-card${isToday ? ' today':''}">
-        <div class="day-name">${diasLabel(dia)}</div>
-        <div class="day-count">${cnt} cl.</div>
-        <div class="day-done">${done} ✓</div>
-      </div>`;
-    }).join('') + '</div>';
+  openModal('modalAsesorPanel');
+}
+
+function changeAsesorSemana(cedula, semana) {
+  asesorPanelSemana = semana;
+  openAsesorPanel(cedula);
+}
+
+function changeAsesorDia(cedula, dia) {
+  asesorPanelDia = dia;
+  openAsesorPanel(cedula);
 }
 
 function clienteVisitaCard(c, estado, visita) {
@@ -730,6 +893,14 @@ function renderClientes(q = '', diaFiltro = '') {
       </div>
     </div>
   `).join('');
+
+  list.querySelectorAll('.client-body').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => {
+      const card = el.closest('.client-card');
+      if (card) openHistorialModal(card.dataset.id);
+    });
+  });
 
   list.querySelectorAll('.btn-visit').forEach(btn =>
     btn.addEventListener('click', e => { e.stopPropagation(); openVisitaModal(btn.dataset.clienteId); })
@@ -1237,11 +1408,103 @@ function renderSemana() {
   );
 }
 
-// ── REPORTES ───────────────────────────────────────────────────
+// ── REPORTES Y ACUMULADOS CON FILTROS ───────────────────────────
+function getDateBounds(rango, customDesde, customHasta) {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+
+  if (rango === 'todas') return { desde: null, hasta: null };
+
+  if (rango === 'semana_actual') {
+    const dayOfWeek = now.getDay(); // 0 Dom, 1 Lun, ...
+    const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    const saturday = new Date(monday);
+    saturday.setDate(monday.getDate() + 5);
+    return { desde: monday.toISOString().split('T')[0], hasta: saturday.toISOString().split('T')[0] };
+  }
+
+  if (rango === 'semana_pasada') {
+    const dayOfWeek = now.getDay();
+    const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek) - 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    const saturday = new Date(monday);
+    saturday.setDate(monday.getDate() + 5);
+    return { desde: monday.toISOString().split('T')[0], hasta: saturday.toISOString().split('T')[0] };
+  }
+
+  if (rango === 'mes_actual') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    return { desde: firstDay, hasta: lastDay };
+  }
+
+  if (rango === 'personalizado') {
+    return { desde: customDesde || null, hasta: customHasta || null };
+  }
+
+  return { desde: null, hasta: null };
+}
+
+function initReportFilters() {
+  const selRango = document.getElementById('reportRango');
+  const selTrab = document.getElementById('reportTrabajador');
+  const customWrap = document.getElementById('reportDatesCustom');
+
+  if (!selRango || selRango.dataset.bound) return;
+  selRango.dataset.bound = '1';
+
+  // Llenar combo de asesores si es Admin
+  if (selTrab) {
+    const trabajadores = loadTrabajadores();
+    selTrab.innerHTML = '<option value="todos">👥 Todos los Asesores</option>' +
+      trabajadores.map(t => `<option value="${t.cedula}">${t.nombre} (CC: ${t.cedula})</option>`).join('');
+  }
+
+  const onChange = () => {
+    if (selRango.value === 'personalizado') {
+      customWrap.classList.remove('hidden');
+    } else {
+      customWrap.classList.add('hidden');
+    }
+    renderReportes();
+  };
+
+  selRango.addEventListener('change', onChange);
+  if (selTrab) selTrab.addEventListener('change', onChange);
+  document.getElementById('reportFechaDesde')?.addEventListener('change', onChange);
+  document.getElementById('reportFechaHasta')?.addEventListener('change', onChange);
+}
+
 function renderReportes() {
-  const clientes = loadClientes();
-  const visitas = loadVisitas();
+  initReportFilters();
+
+  const selRango = document.getElementById('reportRango')?.value || 'semana_actual';
+  const selTrab = document.getElementById('reportTrabajador')?.value || 'todos';
+  const customDesde = document.getElementById('reportFechaDesde')?.value;
+  const customHasta = document.getElementById('reportFechaHasta')?.value;
+
+  const bounds = getDateBounds(selRango, customDesde, customHasta);
+
+  let clientes = loadClientes(true);
+  let visitas = loadVisitas();
   const productos = loadProductos();
+  const sess = getSession();
+
+  // Filtrar por asesor
+  if (sess.rol !== 'admin') {
+    clientes = clientes.filter(c => c.trabajadorId === sess.cedula);
+    visitas = visitas.filter(v => clientes.some(c => c.id === v.clienteId));
+  } else if (selTrab !== 'todos') {
+    clientes = clientes.filter(c => c.trabajadorId === selTrab);
+    visitas = visitas.filter(v => clientes.some(c => c.id === v.clienteId));
+  }
+
+  // Filtrar por fechas
+  if (bounds.desde) visitas = visitas.filter(v => v.fecha >= bounds.desde);
+  if (bounds.hasta) visitas = visitas.filter(v => v.fecha <= bounds.hasta);
 
   const totalVisitas = visitas.length;
   const completadas = visitas.filter(v => v.estado === 'completada').length;
@@ -1265,45 +1528,64 @@ function renderReportes() {
   });
   const topProd = Object.values(pedMap).sort((a,b) => b.valor - a.valor).slice(0,8);
 
-  // Por día
+  // Desglose por Día de la Semana
   const porDia = DIAS.map(dia => {
-    const cnt = clientes.filter(c => c.dia === dia).length;
-    const vis = visitas.filter(v => { const cl = clientes.find(c=>c.id===v.clienteId); return cl && cl.dia === dia && v.estado === 'completada'; }).length;
-    return { dia, cnt, vis };
+    const clsDia = clientes.filter(c => c.dia === dia);
+    const visDia = visitas.filter(v => { const cl = clientes.find(c=>c.id===v.clienteId); return cl && cl.dia === dia && v.estado === 'completada'; });
+    const ventaDia = visDia.reduce((s,v) => s + (v.totalPedido || 0), 0);
+    return { dia, cnt: clsDia.length, vis: visDia.length, ventaDia };
   });
+
+  const rangoTexto = {
+    semana_actual: 'Esta Semana (Lunes a Sábado)',
+    semana_pasada: 'Semana Pasada',
+    mes_actual: 'Este Mes',
+    todas: 'Histórico Completo',
+    personalizado: `Del ${bounds.desde || 'inicio'} al ${bounds.hasta || 'final'}`
+  }[selRango] || 'Rango Seleccionado';
 
   document.getElementById('reportesContent').innerHTML = `
     <div class="report-card">
-      <h4>📊 Resumen General</h4>
-      <div class="report-row"><span>Total clientes</span><strong>${clientes.length}</strong></div>
-      <div class="report-row"><span>Total visitas registradas</span><strong>${totalVisitas}</strong></div>
-      <div class="report-row"><span>Visitas completadas</span><strong>${completadas}</strong></div>
-      <div class="report-row"><span>Efectividad</span><strong>${pct}%</strong></div>
+      <h4>📊 Acumulado y Resumen (${rangoTexto})</h4>
+      <div class="report-row"><span>Total clientes base</span><strong>${clientes.length}</strong></div>
+      <div class="report-row"><span>Total visitas en el período</span><strong>${totalVisitas}</strong></div>
+      <div class="report-row"><span>Visitas completadas</span><strong style="color:#2E7D32">${completadas}</strong></div>
+      <div class="report-row"><span>Efectividad de visitas</span><strong>${pct}%</strong></div>
       <div class="progress-bar-wrap" style="margin-top:8px"><div class="progress-bar" style="width:${pct}%"></div></div>
-      <div class="report-row" style="margin-top:12px"><span>💰 Total facturado</span><strong style="color:#E65100">${fmt$(totalPedido)}</strong></div>
-      <div class="report-row"><span>⚠️ Productos agotados reportados</span><strong style="color:#C62828">${agotadosTot}</strong></div>
-      <div class="report-row"><span>🚫 Productos vencidos reportados</span><strong style="color:#C62828">${vencidosTot}</strong></div>
+      <div class="report-row" style="margin-top:14px;padding-top:8px;border-top:1px solid #EEE">
+        <span>💰 Total Facturado / Pedidos:</span>
+        <strong style="color:#E65100;font-size:1.15rem">${fmt$(totalPedido)}</strong>
+      </div>
+      <div class="report-row"><span>⚠️ Novedades de Agotados</span><strong style="color:#C62828">${agotadosTot}</strong></div>
+      <div class="report-row"><span>🚫 Novedades de Vencidos</span><strong style="color:#673AB7">${vencidosTot}</strong></div>
     </div>
+
     <div class="report-card">
-      <h4>📅 Visitas por día de la semana</h4>
+      <h4>📅 Acumulado por Día de la Semana</h4>
       ${porDia.map(d => `
-        <div class="report-row">
-          <span>${d.dia}</span>
-          <span style="color:#9E9E9E">${d.cnt} clientes</span>
-          <strong>${d.vis} ✓</strong>
+        <div class="report-row" style="align-items:center">
+          <div>
+            <strong>${d.dia}</strong>
+            <span style="color:#9E9E9E;font-size:0.78rem;margin-left:6px">(${d.cnt} clientes)</span>
+          </div>
+          <div style="text-align:right">
+            <span style="font-weight:700;color:#E65100;margin-right:10px">${fmt$(d.ventaDia)}</span>
+            <span class="badge-day" style="font-size:0.75rem">${d.vis} ✓</span>
+          </div>
         </div>
       `).join('')}
     </div>
+
     ${topProd.length > 0 ? `
     <div class="report-card">
-      <h4>🏆 Top Productos Más Pedidos</h4>
+      <h4>🏆 Top Productos Más Pedidos en el Período</h4>
       ${topProd.map((p,i) => `
         <div class="report-row">
-          <span>${i+1}. ${p.nombre.length > 40 ? p.nombre.substring(0,38)+'…' : p.nombre}</span>
-          <strong>${fmt$(p.valor)}</strong>
+          <span><strong>${i+1}.</strong> ${p.nombre.length > 38 ? p.nombre.substring(0,36)+'…' : p.nombre} <small style="color:#757575">(${p.total} un.)</small></span>
+          <strong style="color:#E65100">${fmt$(p.valor)}</strong>
         </div>
       `).join('')}
-    </div>` : ''}
+    </div>` : '<div class="report-card"><p style="color:#9E9E9E;margin:0;text-align:center">Sin pedidos en este rango de fecha</p></div>'}
   `;
 }
 
@@ -1446,7 +1728,53 @@ function openHistorialModal(clienteId) {
     return;
   }
 
-  cont.innerHTML = visitas.map((v, idx) => {
+  // Calcular acumulado por producto
+  const prodSummary = {};
+  visitas.forEach(v => {
+    (v.productos || []).forEach(vp => {
+      if ((vp.pedira || 0) > 0 || (vp.tiene || 0) > 0) {
+        const p = productos.find(x => x.id === vp.productoId);
+        if (!prodSummary[vp.productoId]) {
+          prodSummary[vp.productoId] = { nombre: p ? p.nombre : vp.productoId, pedira: 0, stock: vp.tiene || 0 };
+        }
+        prodSummary[vp.productoId].pedira += (vp.pedira || 0);
+        prodSummary[vp.productoId].stock = vp.tiene || prodSummary[vp.productoId].stock;
+      }
+    });
+  });
+
+  const prodsConVenta = Object.values(prodSummary).sort((a,b) => b.pedira - a.pedira);
+  const maxPed = prodsConVenta.length ? Math.max(...prodsConVenta.map(x => x.pedira)) : 1;
+
+  let topProdsHtml = '';
+  if (prodsConVenta.length > 0) {
+    topProdsHtml = `
+      <div style="background: linear-gradient(135deg, #0F172A, #1E293B); color: white; border-radius: 14px; padding: 16px 18px; margin: 12px 16px 18px 16px; box-shadow: 0 4px 14px rgba(15,23,42,0.15);">
+        <div style="font-weight:700; font-size:0.92rem; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+          <span>📊 Acumulado de Productos hasta el momento</span>
+          <span style="font-size:0.75rem; color:#94A3B8; font-weight:normal;">${prodsConVenta.length} producto(s) pedidos</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${prodsConVenta.map(p => {
+            const pct = maxPed ? Math.round((p.pedira / maxPed) * 100) : 0;
+            return `
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; margin-bottom:3px;">
+                  <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">${p.nombre}</span>
+                  <span style="color:#FFB74D;">${p.pedira} und. pedidos (Stock: ${p.stock})</span>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:10px; overflow:hidden;">
+                  <div style="height:100%; width:${Math.max(pct, 5)}%; background:linear-gradient(90deg, #FF6B00, #FFA726); border-radius:10px;"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  cont.innerHTML = topProdsHtml + visitas.map((v, idx) => {
     const prev = visitas[idx + 1]; // visita anterior (más antigua)
     const fecha = fmtDate(v.fecha);
     const estadoClass = v.estado === 'completada' ? 'hist-badge-completada' : 'hist-badge-pendiente';

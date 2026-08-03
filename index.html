@@ -73,10 +73,6 @@
           <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z" fill="currentColor"/></svg>
           <span>Dashboard</span>
         </a></li>
-        <li class="admin-only"><a href="#" data-view="trabajadores" class="nav-item">
-          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg>
-          <span>Trabajadores / Equipo</span>
-        </a></li>
         <li><a href="#" data-view="clientes" class="nav-item">
           <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
           <span>Clientes</span>
@@ -85,17 +81,9 @@
           <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/></svg>
           <span>Visitas Hoy</span>
         </a></li>
-        <li><a href="#" data-view="semana" class="nav-item">
-          <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" fill="currentColor"/></svg>
-          <span>Semana</span>
-        </a></li>
         <li class="admin-only"><a href="#" data-view="productos" class="nav-item">
           <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 3h2v2h-2V7zm0 4h2v6h-2v-6zM7 7h2v2H7V7zm0 4h2v6H7v-6zm10 6h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/></svg>
           <span>Catálogo</span>
-        </a></li>
-        <li class="admin-only"><a href="#" data-view="reportes" class="nav-item">
-          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" fill="currentColor"/></svg>
-          <span>Reportes</span>
         </a></li>
       </ul>
       <div class="sidebar-bottom">
@@ -184,8 +172,35 @@
       <!-- REPORTES -->
       <div id="view-reportes" class="view">
         <div class="page-header">
-          <h2>Reportes</h2>
+          <h2>Reportes & Acumulados</h2>
         </div>
+
+        <!-- Barra de Filtros de Fecha y Asesor -->
+        <div class="report-filters-bar">
+          <div class="field-inline">
+            <label>Rango de Fecha:</label>
+            <select id="reportRango">
+              <option value="semana_actual" selected>📅 Esta Semana (LUN - SÁB)</option>
+              <option value="todas">🌐 Histórico Completo</option>
+              <option value="semana_pasada">⏪ Semana Pasada</option>
+              <option value="mes_actual">📆 Este Mes</option>
+              <option value="personalizado">🛠 Personalizado...</option>
+            </select>
+          </div>
+          <div class="field-inline admin-only" id="reportWorkerWrap">
+            <label>Asesor / Vendedor:</label>
+            <select id="reportTrabajador">
+              <option value="todos">👥 Todos los Asesores</option>
+            </select>
+          </div>
+          <div class="field-inline hidden" id="reportDatesCustom">
+            <label>Desde:</label>
+            <input type="date" id="reportFechaDesde" />
+            <label>Hasta:</label>
+            <input type="date" id="reportFechaHasta" />
+          </div>
+        </div>
+
         <div id="reportesContent"></div>
       </div>
 
@@ -387,6 +402,45 @@
         <div class="modal-foot">
           <button class="btn-ghost" data-close="modalConfig">Cancelar</button>
           <button class="btn-primary" id="saveConfigBtn">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Panel de Asesor (Drill-Down Nivel 2) -->
+    <div class="modal-bg" id="modalAsesorPanel">
+      <div class="modal-box modal-wide">
+        <div class="modal-head" style="background: linear-gradient(135deg, #1E293B, #0F172A); color: white; padding: 20px 24px; border-radius: 16px 16px 0 0;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div id="asesorPanelAvatar" style="width:46px; height:46px; border-radius:50%; background: linear-gradient(135deg, #FF6B00, #E65100); color:white; font-size:1.4rem; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(230,81,0,0.4);">A</div>
+            <div>
+              <h3 id="asesorPanelNombre" style="margin:0; font-size:1.25rem; font-weight:700; color:white;">Detalle del Asesor</h3>
+              <p id="asesorPanelMeta" style="margin:2px 0 0 0; font-size:0.83rem; color: #94A3B8;">CC: - · Zona: -</p>
+            </div>
+          </div>
+          <button class="btn-close" data-close="modalAsesorPanel" style="color:white; opacity:0.8;">✕</button>
+        </div>
+        <div class="modal-content" style="padding: 20px 24px; background: #F8FAFC;">
+          <!-- Filtros de Semana del Mes y Día -->
+          <div style="margin-bottom:16px; display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <div style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748B; margin-bottom:6px;">📅 Semana del Mes</div>
+              <div class="ap-pills" id="asesorPanelSemanas"></div>
+            </div>
+            <div>
+              <div style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748B; margin-bottom:6px;">🗓️ Día de Ruta</div>
+              <div class="ap-pills" id="asesorPanelDias"></div>
+            </div>
+          </div>
+
+          <!-- Métricas del Asesor -->
+          <div class="ap-kpis-grid" id="asesorPanelKpis"></div>
+
+          <!-- Lista de Clientes -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin: 20px 0 10px 0;">
+            <span style="font-weight:700; font-size:1rem; color:#1E293B;">👥 Clientes del Día</span>
+            <small style="color:#64748B;">👇 Toca un cliente para ver su rastro completo</small>
+          </div>
+          <div id="asesorPanelClientes" class="ap-clients-list"></div>
         </div>
       </div>
     </div>
