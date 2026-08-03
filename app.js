@@ -117,13 +117,8 @@ function loadClientes(all = false) {
   const list = DB.get('ap_clientes', []);
   const sess = getSession();
   if (all || !sess || sess.rol === 'admin') return list;
-  
-  const asignados = list.filter(c => c.trabajadorId === sess.cedula);
-  if (asignados.length > 0) return asignados;
-  
-  // Si no hay ninguno asignado explícitamente a este trabajador, mostrar los sin asignar o todos
-  const sinAsignar = list.filter(c => !c.trabajadorId);
-  return sinAsignar.length > 0 ? sinAsignar : list;
+  // Cada trabajador solo ve sus propios clientes asignados
+  return list.filter(c => c.trabajadorId === sess.cedula);
 }
 function saveClientes(d) { DB.set('ap_clientes', d); }
 function loadProductos() {
@@ -990,11 +985,11 @@ function renderVisitaTable(filtro = '') {
     thead.innerHTML = `<tr>
       <th style="min-width:80px">Código</th>
       <th style="min-width:170px">Producto</th>
-      <th style="min-width:90px;text-align:right">Valor del<br>producto</th>
-      <th class="th-tiene" style="min-width:88px;text-align:center">Lo que tiene<br>actualmente</th>
-      <th class="th-pide"  style="min-width:88px;text-align:center">Lo que va<br>a pedir</th>
-      <th class="th-agotado" style="min-width:72px;text-align:center">Agotado</th>
-      <th class="th-vencido" style="min-width:80px;text-align:center">Producto<br>Vencido</th>
+      <th style="text-align:right">Precio</th>
+      <th class="th-tiene" style="text-align:center">Stock</th>
+      <th class="th-pide" style="text-align:center">A pedir</th>
+      <th class="th-agotado" style="text-align:center">Agotado</th>
+      <th class="th-vencido" style="text-align:center">Vencido</th>
     </tr>`;
   }
 

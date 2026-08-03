@@ -1,12 +1,23 @@
 /* ============================================================
    ZenUp – Datos de demostración
-   Asesora: ANGIE TATIANA BEDOYA (25022)
+   Asesores reales Zenú – Pereira
    ============================================================ */
 
 (function loadDemoData() {
-  // Siempre sobreescribir trabajadores con la asesora única
+  // Lista completa de asesores reales
   const trabajadores = [
-    { id: 't-001', cedula: '25022', nombre: 'ANGIE TATIANA BEDOYA', zona: 'Pereira - Cuba / Perla del Sur', telefono: '', rol: 'trabajador' }
+    { id: 't-001', cedula: '1005021309',  nombre: 'ADRIANA CALLE ALVAREZ',              zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-002', cedula: '1112774849',  nombre: 'ANYIE VIVIANA CARDONA DUQUE',         zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-003', cedula: '1112783158',  nombre: 'BRAYAN CAMILO ALZATE BUSTAMANTE',     zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-004', cedula: '1088327362',  nombre: 'YEISSON STIVEN GAÑAN NIETO',          zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-005', cedula: '1088008480',  nombre: 'ANA MARIA ACERO OCAMPO',             zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-006', cedula: '1088252454',  nombre: 'ALBA YANETH SANCHEZ SOSSA',           zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-007', cedula: '1004719311',  nombre: 'JUAN MANUEL RESTREPO ORREGO',         zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-008', cedula: '42016714',    nombre: 'LUZ ANDREA (GEMELA) ALVAREZ MONTOYA', zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-009', cedula: '1112764385',  nombre: 'JUAN GABRIEL OCAMPO MARIN',           zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-010', cedula: '1087493266',  nombre: 'TANIA ALEJANDRA ISAZA ARICAPA',       zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-011', cedula: '1112785365',  nombre: 'ANGIE TATIANA BEDOYA CORREA',         zona: 'Pereira - Cuba / Perla del Sur', telefono: '', rol: 'trabajador' },
+    { id: 't-012', cedula: '1088334239',  nombre: 'CRISTHIAN DAVID CASTAÑO CORREA',      zona: '', telefono: '', rol: 'trabajador' },
   ];
   localStorage.setItem('ap_trabajadores', JSON.stringify(trabajadores));
 
@@ -21,7 +32,7 @@
       dia: 'LUNES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     },
     {
@@ -32,7 +43,7 @@
       dia: 'LUNES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     },
     {
@@ -43,7 +54,7 @@
       dia: 'LUNES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     },
 
@@ -56,7 +67,7 @@
       dia: 'MARTES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     },
     {
@@ -67,7 +78,7 @@
       dia: 'MARTES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     }
 
@@ -80,7 +91,7 @@
       dia: 'MIÉRCOLES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     },
     {
@@ -91,7 +102,7 @@
       dia: 'MIÉRCOLES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     }
 
@@ -104,7 +115,7 @@
       dia: 'JUEVES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     }
 
@@ -117,7 +128,7 @@
       dia: 'VIERNES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     },
     {
@@ -128,7 +139,7 @@
       dia: 'VIERNES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     },
     {
@@ -139,7 +150,7 @@
       dia: 'VIERNES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     },
     {
@@ -150,7 +161,7 @@
       dia: 'VIERNES',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     }
 
@@ -163,7 +174,7 @@
       dia: 'SÁBADO',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     },
     {
@@ -174,7 +185,7 @@
       dia: 'SÁBADO',
       telefono: '',
       notas: '',
-      trabajadorId: '25022',
+      trabajadorId: '1112785365',
       creadoEn: Date.now()
     }
   ];
