@@ -723,6 +723,7 @@ function renderClientes(q = '', diaFiltro = '') {
         </div>
       </div>
       <div class="client-actions">
+        <button class="btn-historial" data-hist="${c.id}" title="Ver historial">📊</button>
         <button class="btn-visit" data-cliente-id="${c.id}" title="Registrar visita">📋</button>
         <button class="btn-edit-sm" data-edit="${c.id}" title="Editar">✏️</button>
         <button class="btn-del-sm" data-del="${c.id}" title="Eliminar">🗑</button>
@@ -738,6 +739,9 @@ function renderClientes(q = '', diaFiltro = '') {
   );
   list.querySelectorAll('[data-del]').forEach(btn =>
     btn.addEventListener('click', e => { e.stopPropagation(); deleteCliente(btn.dataset.del); })
+  );
+  list.querySelectorAll('[data-hist]').forEach(btn =>
+    btn.addEventListener('click', e => { e.stopPropagation(); openHistorialModal(btn.dataset.hist); })
   );
 }
 
@@ -1417,6 +1421,103 @@ function descargarTxt(texto, fecha) {
   a.click();
   URL.revokeObjectURL(url);
   showToast('Resumen exportado', 'success');
+}
+
+// ── HISTORIAL DE CLIENTE ──────────────────────────────────────
+function openHistorialModal(clienteId) {
+  const clientes = loadClientes(true);
+  const c = clientes.find(x => x.id === clienteId);
+  if (!c) return;
+
+  const visitas = loadVisitas()
+    .filter(v => v.clienteId === clienteId)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha)); // más reciente primero
+
+  const productos = loadProductos();
+
+  document.getElementById('historialClienteNombre').textContent = c.nombre;
+  document.getElementById('historialClienteCodigo').textContent = c.codigo + ' · ' + (c.poblacion || '') + ' · ' + (c.dia || '');
+
+  const cont = document.getElementById('historialBody');
+
+  if (visitas.length === 0) {
+    cont.innerHTML = `<div class="empty-state" style="padding:2rem;text-align:center;color:#9E9E9E">📭 Sin visitas registradas aún</div>`;
+    openModal('modalHistorial');
+    return;
+  }
+
+  cont.innerHTML = visitas.map((v, idx) => {
+    const prev = visitas[idx + 1]; // visita anterior (más antigua)
+    const fecha = fmtDate(v.fecha);
+    const estadoClass = v.estado === 'completada' ? 'hist-badge-completada' : 'hist-badge-pendiente';
+    const estadoBadge = { completada: '✅ Completada', pendiente: '⏳ Pendiente', en_curso: '🔄 En curso' }[v.estado] || v.estado;
+
+    // Filtrar para destacar productos con movimiento o novedades
+    const productosConInfo = v.productos.filter(vp => (vp.tiene || 0) > 0 || (vp.pedira || 0) > 0 || vp.agotado || vp.vencido);
+    const productosAMostrar = productosConInfo.length > 0 ? productosConInfo : v.productos;
+
+    const filas = productosAMostrar.map(vp => {
+      const p = productos.find(x => x.id === vp.productoId);
+      if (!p) return '';
+      const prevVp = prev ? prev.productos.find(x => x.productoId === vp.productoId) : null;
+
+      function trend(cur, old) {
+        if (!prevVp) return '';
+        const diff = cur - old;
+        if (diff > 0) return `<span class="trend-up">▲+${diff}</span>`;
+        if (diff < 0) return `<span class="trend-down">▼${diff}</span>`;
+        return `<span class="trend-eq">=</span>`;
+      }
+
+      const tTiene  = trend(vp.tiene  || 0, prevVp ? prevVp.tiene  || 0 : 0);
+      const tPedira = trend(vp.pedira || 0, prevVp ? prevVp.pedira || 0 : 0);
+
+      const agotadoBadge = vp.agotado ? '<span class="badge-agotado">Agotado</span>' : '';
+      const vencidoBadge = vp.vencido ? '<span class="badge-vencido">Vencido</span>' : '';
+      const estadoStr = [agotadoBadge, vencidoBadge].filter(Boolean).join(' ') || '<span class="text-muted font-sm">Ok</span>';
+
+      return `<tr>
+        <td class="hist-prod-name"><strong>${p.nombre}</strong></td>
+        <td class="text-center font-mono"><strong>${vp.tiene || 0}</strong> ${tTiene}</td>
+        <td class="text-center font-mono highlight-pide"><strong>${vp.pedira || 0}</strong> ${tPedira}</td>
+        <td class="text-center">${estadoStr}</td>
+      </tr>`;
+    }).filter(Boolean).join('');
+
+    const totalFmt = fmt$(v.totalPedido || 0);
+
+    return `
+      <div class="hist-entry">
+        <div class="hist-entry-head">
+          <div class="hist-head-left">
+            <span class="hist-icon">📅</span>
+            <span class="hist-fecha">${fecha}</span>
+            <span class="hist-badge ${estadoClass}">${estadoBadge}</span>
+          </div>
+          <div class="hist-total-badge">
+            <span class="hist-total-label">Total Pedido:</span>
+            <strong>${totalFmt}</strong>
+          </div>
+        </div>
+        ${filas ? `
+        <div class="hist-table-wrap">
+          <table class="hist-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="text-center">Stock</th>
+                <th class="text-center">A Pedir</th>
+                <th class="text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </div>` : '<p class="hist-empty-msg">Sin productos registrados en esta visita</p>'}
+        ${v.notas ? `<div class="hist-notas">💡 <strong>Nota:</strong> ${v.notas}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  openModal('modalHistorial');
 }
 
 // ── SERVICE WORKER ────────────────────────────────────────────
