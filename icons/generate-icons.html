@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generar íconos</title></head>
+<body>
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+<br/>
+<button onclick="dl(192)">Descargar icon-192.png</button>
+<button onclick="dl(512)">Descargar icon-512.png</button>
+<script>
+function drawIcon(canvas) {
+  const ctx = canvas.getContext('2d');
+  const s = canvas.width;
+  const r = s / 2;
+  // Fondo naranja
+  const grad = ctx.createRadialGradient(r*0.7, r*0.5, 0, r, r, r);
+  grad.addColorStop(0, '#FF6D00');
+  grad.addColorStop(1, '#BF360C');
+  ctx.beginPath(); ctx.arc(r, r, r, 0, Math.PI*2);
+  ctx.fillStyle = grad; ctx.fill();
+  // Hexágono / edificio
+  ctx.strokeStyle = 'white'; ctx.lineWidth = s * 0.04; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  const cx = r, cy = r, sz = r*0.55;
+  ctx.moveTo(cx, cy - sz);
+  ctx.lineTo(cx + sz*0.87, cy - sz*0.5);
+  ctx.lineTo(cx + sz*0.87, cy + sz*0.5);
+  ctx.lineTo(cx, cy + sz);
+  ctx.lineTo(cx - sz*0.87, cy + sz*0.5);
+  ctx.lineTo(cx - sz*0.87, cy - sz*0.5);
+  ctx.closePath(); ctx.stroke();
+  // Letra A
+  ctx.fillStyle = 'white'; ctx.font = `bold ${s*0.35}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('A', cx, cy + s*0.02);
+}
+['c192','c512'].forEach(id => drawIcon(document.getElementById(id)));
+function dl(size) {
+  const a = document.createElement('a');
+  a.download = `icon-${size}.png`;
+  a.href = document.getElementById('c'+size).toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>

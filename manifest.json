@@ -1,0 +1,16 @@
+﻿{
+  "name": "ZenUp – Gestión de Visitas",
+  "short_name": "ZenUp",
+  "description": "App para asesores comerciales: registra cambios y pedidos de clientes cada semana",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#E65100",
+  "theme_color": "#E65100",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "es"
+}
