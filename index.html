@@ -73,6 +73,10 @@
           <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z" fill="currentColor"/></svg>
           <span>Dashboard</span>
         </a></li>
+        <li class="admin-only"><a href="#" data-view="trabajadores" class="nav-item">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/></svg>
+          <span>Trabajadores / Equipo</span>
+        </a></li>
         <li><a href="#" data-view="clientes" class="nav-item">
           <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="currentColor"/></svg>
           <span>Clientes</span>
@@ -85,18 +89,22 @@
           <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" fill="currentColor"/></svg>
           <span>Semana</span>
         </a></li>
-        <li><a href="#" data-view="productos" class="nav-item">
+        <li class="admin-only"><a href="#" data-view="productos" class="nav-item">
           <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 3h2v2h-2V7zm0 4h2v6h-2v-6zM7 7h2v2H7V7zm0 4h2v6H7v-6zm10 6h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/></svg>
           <span>Catálogo</span>
         </a></li>
-        <li><a href="#" data-view="reportes" class="nav-item">
+        <li class="admin-only"><a href="#" data-view="reportes" class="nav-item">
           <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" fill="currentColor"/></svg>
           <span>Reportes</span>
         </a></li>
       </ul>
       <div class="sidebar-bottom">
-        <button class="nav-item" id="settingsBtn" style="width:100%;border:none;background:none;cursor:pointer">
-          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.6-.22l-2.39.96a7.4 7.4 0 00-1.62-.94l-.36-2.54A.484.484 0 0014 2h-4a.484.484 0 00-.48.41l-.36 2.54a7.4 7.4 0 00-1.62.94l-2.39-.96a.48.48 0 00-.6.22L2.63 8.47a.47.47 0 00.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.02.64.07.94l-2.03 1.58a.47.47 0 00-.12.61l1.92 3.32c.12.22.37.3.6.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.05.24.24.41.48.41h4c.24 0 .44-.17.47-.41l.36-2.54c.58-.27 1.11-.58 1.62-.94l2.39.96c.23.09.48 0 .6-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="currentColor"/></svg>
+        <button class="nav-item" id="logoutBtn" style="width:100%;border:none;background:none;cursor:pointer;color:#ef5350">
+          <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" fill="currentColor"/></svg>
+          <span>Cerrar Sesión</span>
+        </button>
+        <button class="nav-item admin-only" id="settingsBtn" style="width:100%;border:none;background:none;cursor:pointer">
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.6-.22l-2.39.96a7.4 7.4 0 00-1.62-.94l-.36-2.54A.484.484 0 0014 2h-4a.484.484 0 00-.48.41l-.36 2.54a7.4 7.4 0 00-1.62.94l-2.39-.96a.48.48 0 00-.6.22L2.63 8.47a.47.47 0 00.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.02.64.07.94l-2.03 1.58a.47.47 0 00-.12.61l1.92 3.32c.12.22.37.3.6.22l2.39-.96c.5.36 1.04.67 1.62.94l.36 2.54c.05.24.24.41.48.41h4c.24 0 .44-.17.47-.41l.36-2.54c.58-.27 1.11-.58 1.62-.94l2.39.96c.23.09.48 0 .6-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z" fill="currentColor"/></svg>
           <span>Configuración</span>
         </button>
       </div>
@@ -181,6 +189,19 @@
         <div id="reportesContent"></div>
       </div>
 
+      <!-- TRABAJADORES (ADMIN) -->
+      <div id="view-trabajadores" class="view">
+        <div class="page-header">
+          <h2>Equipo de Asesores / Trabajadores</h2>
+          <button class="btn-primary btn-sm" id="addTrabajadorBtn">+ Registrar Asesor</button>
+        </div>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/></svg>
+          <input type="text" id="searchTrabajador" placeholder="Buscar por nombre, cédula o zona..." />
+        </div>
+        <div id="trabajadoresList"></div>
+      </div>
+
     </main>
 
     <!-- FAB -->
@@ -230,6 +251,12 @@
                 <label>Teléfono</label>
                 <input type="tel" id="clienteTelefono" placeholder="3001234567"/>
               </div>
+            </div>
+            <div class="field admin-only">
+              <label>Trabajador / Asesor Asignado</label>
+              <select id="clienteTrabajador">
+                <option value="">-- Sin Asignar --</option>
+              </select>
             </div>
             <div class="field">
               <label>Notas</label>
@@ -360,6 +387,74 @@
         <div class="modal-foot">
           <button class="btn-ghost" data-close="modalConfig">Cancelar</button>
           <button class="btn-primary" id="saveConfigBtn">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Trabajador -->
+    <div class="modal-bg" id="modalTrabajador">
+      <div class="modal-box">
+        <div class="modal-head">
+          <h3 id="modalTrabajadorTitle">Registrar Asesor / Trabajador</h3>
+          <button class="btn-close" data-close="modalTrabajador">✕</button>
+        </div>
+        <div class="modal-content">
+          <form id="formTrabajador" autocomplete="off">
+            <input type="hidden" id="trabajadorId"/>
+            <div class="field">
+              <label>Cédula de Identidad (Login) *</label>
+              <input type="text" id="trabajadorCedula" placeholder="ej: 1088123456" required/>
+            </div>
+            <div class="field">
+              <label>Nombre Completo *</label>
+              <input type="text" id="trabajadorNombre" placeholder="ej: Juan Carlos Pérez" required/>
+            </div>
+            <div class="field">
+              <label>Zona / Ruta Asignada</label>
+              <input type="text" id="trabajadorZona" placeholder="ej: Pereira - Centro / Cuba"/>
+            </div>
+            <div class="field">
+              <label>Teléfono de Contacto</label>
+              <input type="tel" id="trabajadorTelefono" placeholder="3101234567"/>
+            </div>
+          </form>
+        </div>
+        <div class="modal-foot">
+          <button class="btn-ghost" data-close="modalTrabajador">Cancelar</button>
+          <button class="btn-primary" id="saveTrabajadorBtn">Guardar Asesor</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA DE LOGIN POR CÉDULA -->
+    <div id="loginOverlay" class="login-overlay">
+      <div class="login-card">
+        <div class="login-header">
+          <div class="login-logo">
+            <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="40" cy="40" r="40" fill="#E65100"/>
+              <path d="M22 52V30l18-10 18 10v22l-18 10z" fill="none" stroke="white" stroke-width="2.5"/>
+              <path d="M32 40h16M32 44h10M40 32v-6" stroke="white" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h2>ZenUp Visitas</h2>
+          <p>Ingreso por Cédula de Identidad</p>
+        </div>
+
+        <form id="loginForm" autocomplete="off">
+          <div class="field">
+            <label>Cédula de Ciudadanía</label>
+            <input type="text" id="loginCedula" placeholder="Ingresa tu cédula..." required autofocus />
+          </div>
+          <button type="submit" class="btn-primary btn-block">⚡ Ingresar a la App</button>
+        </form>
+
+        <div class="login-hints">
+          <div class="login-hint-title">Acceso rápido de prueba:</div>
+          <div class="hint-pills">
+            <span class="hint-pill admin-pill" onclick="document.getElementById('loginCedula').value='0000'">👑 Admin (0000)</span>
+            <span class="hint-pill" onclick="document.getElementById('loginCedula').value='25022'">👩‍💼 ANGIE TATIANA BEDOYA (25022)</span>
+          </div>
         </div>
       </div>
     </div>

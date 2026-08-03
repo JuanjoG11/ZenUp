@@ -103,7 +103,28 @@ const DB = {
   getObj: (key, def = {}) => { try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; } }
 };
 
-function loadClientes() { return DB.get('ap_clientes', []); }
+function loadTrabajadores() { return DB.get('ap_trabajadores', []); }
+function saveTrabajadores(d) { DB.set('ap_trabajadores', d); }
+
+function getSession() { return DB.getObj('ap_session', null); }
+function setSession(sess) { DB.set('ap_session', sess); }
+function logout() {
+  localStorage.removeItem('ap_session');
+  location.reload();
+}
+
+function loadClientes(all = false) {
+  const list = DB.get('ap_clientes', []);
+  const sess = getSession();
+  if (all || !sess || sess.rol === 'admin') return list;
+  
+  const asignados = list.filter(c => c.trabajadorId === sess.cedula);
+  if (asignados.length > 0) return asignados;
+  
+  // Si no hay ninguno asignado explícitamente a este trabajador, mostrar los sin asignar o todos
+  const sinAsignar = list.filter(c => !c.trabajadorId);
+  return sinAsignar.length > 0 ? sinAsignar : list;
+}
 function saveClientes(d) { DB.set('ap_clientes', d); }
 function loadProductos() {
   const p = DB.get('ap_productos', null);
@@ -145,6 +166,46 @@ function showToast(msg, type = '') {
 let currentView = 'dashboard';
 let visitaProductos = []; // productos en el modal de visita abierto
 
+// ── LOGIN HANDLERS ────────────────────────────────────────────
+function checkLogin() {
+  const sess = getSession();
+  const loginOverlay = document.getElementById('loginOverlay');
+  if (!sess) {
+    if (loginOverlay) loginOverlay.classList.remove('hidden');
+  } else {
+    if (loginOverlay) loginOverlay.classList.add('hidden');
+    renderPerfil();
+    renderDashboard();
+  }
+}
+
+function handleLogin(e) {
+  if (e) e.preventDefault();
+  const input = document.getElementById('loginCedula');
+  const ced = input ? input.value.trim() : '';
+  if (!ced) {
+    showToast('Ingresa una cédula válida', 'error');
+    return;
+  }
+
+  if (ced === '0000') {
+    setSession({ cedula: '0000', nombre: 'Administrador General', zona: 'Todas las zonas', rol: 'admin' });
+    showToast('¡Bienvenido Administrador! 👑', 'success');
+    checkLogin();
+    return;
+  }
+
+  const trabajadores = loadTrabajadores();
+  const t = trabajadores.find(x => x.cedula === ced);
+  if (t) {
+    setSession({ cedula: t.cedula, nombre: t.nombre, zona: t.zona || 'Zona General', rol: 'trabajador' });
+    showToast(`¡Bienvenido ${t.nombre}! 👋`, 'success');
+    checkLogin();
+  } else {
+    showToast('Cédula no registrada. Contacta al Administrador.', 'error');
+  }
+}
+
 // ── INIT ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   // Asegurar catálogo
@@ -153,8 +214,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Ocultar splash
   setTimeout(() => {
     document.getElementById('splash').classList.add('hidden');
-    renderDashboard();
+    checkLogin();
   }, 1200);
+
+  // Formulario de login por Cédula
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) loginForm.addEventListener('submit', handleLogin);
+
+  // Botón logout
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
   // PWA offline detection
   function updateOnline() {
@@ -206,6 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Guardar cliente
   document.getElementById('saveClienteBtn').addEventListener('click', saveCliente);
 
+  // Botones e inputs de Trabajadores (Admin)
+  const addTrabajadorBtn = document.getElementById('addTrabajadorBtn');
+  if (addTrabajadorBtn) addTrabajadorBtn.addEventListener('click', () => openTrabajadorModal(null));
+  const saveTrabajadorBtn = document.getElementById('saveTrabajadorBtn');
+  if (saveTrabajadorBtn) saveTrabajadorBtn.addEventListener('click', saveTrabajador);
+  const searchTrabajador = document.getElementById('searchTrabajador');
+  if (searchTrabajador) searchTrabajador.addEventListener('input', e => renderTrabajadores(e.target.value));
+
   // Botón Nuevo Producto catálogo
   document.getElementById('addProductoBtn').addEventListener('click', () => openProductoModal(null));
   document.getElementById('saveProductoBtn').addEventListener('click', saveProducto);
@@ -215,9 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Búsqueda productos catálogo
   document.getElementById('searchProducto').addEventListener('input', e => renderProductos(e.target.value));
-
-  // Agregar producto a visita — ya no se usa (lista completa precargada)
-  // document.getElementById('addProductoVisitaBtn') eliminado del HTML
 
   // Filtro en tabla de visita
   document.getElementById('filterVisitaProductos').addEventListener('input', e => {
@@ -232,8 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('saveConfigBtn').addEventListener('click', saveConfigData);
   document.getElementById('btnClearData').addEventListener('click', clearAllData);
 
-  // Perfil
-  renderPerfil();
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 });
 
@@ -247,6 +319,7 @@ function navigateTo(view) {
   if (nav) nav.classList.add('active');
   currentView = view;
   if (view === 'dashboard') renderDashboard();
+  if (view === 'trabajadores') renderTrabajadores();
   if (view === 'clientes') renderClientes();
   if (view === 'visitas') renderVisitasHoy();
   if (view === 'semana') renderSemana();
@@ -268,21 +341,39 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 
 // ── PERFIL ────────────────────────────────────────────────────
 function renderPerfil() {
-  const cfg = loadConfig();
-  const inicial = (cfg.nombre || 'A')[0].toUpperCase();
+  const sess = getSession();
+  if (!sess) return;
+  const inicial = (sess.nombre || 'A')[0].toUpperCase();
   document.getElementById('profileAvatar').textContent = inicial;
-  document.getElementById('profileName').textContent = cfg.nombre || 'Asesor';
-  document.getElementById('profileZona').textContent = cfg.zona || 'Zona sin definir';
+  document.getElementById('profileName').textContent = sess.nombre;
+  document.getElementById('profileZona').textContent = sess.rol === 'admin'
+    ? '👑 Administrador General'
+    : `📋 Asesor (CC: ${sess.cedula}) · ${sess.zona || 'Sin zona'}`;
+
+  if (sess.rol === 'trabajador') {
+    document.body.classList.add('is-trabajador');
+  } else {
+    document.body.classList.remove('is-trabajador');
+  }
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
 function renderDashboard() {
-  const clientes = loadClientes();
-  const visitas = loadVisitas();
+  const sess = getSession();
+  if (!sess) return;
+
   const hoy = todayISO();
   const diaHoy = todayDia();
 
-  // Stats
+  if (sess.rol === 'admin') {
+    renderAdminDashboard();
+    return;
+  }
+
+  // TRABAJADOR DASHBOARD
+  const clientes = loadClientes(); // Solo clientes de este trabajador
+  const visitas = loadVisitas().filter(v => clientes.some(c => c.id === v.clienteId));
+
   const visitasHoy = visitas.filter(v => v.fecha === hoy);
   const completadas = visitasHoy.filter(v => v.estado === 'completada').length;
   const pendientes = visitasHoy.filter(v => v.estado === 'pendiente' || v.estado === 'en_curso').length;
@@ -293,7 +384,7 @@ function renderDashboard() {
   document.getElementById('statsRow').innerHTML = `
     <div class="stat-card">
       <div class="stat-value">${clientesHoy}</div>
-      <div class="stat-label">Clientes Hoy</div>
+      <div class="stat-label">Mis Clientes Hoy</div>
     </div>
     <div class="stat-card green">
       <div class="stat-value">${completadas}</div>
@@ -305,7 +396,7 @@ function renderDashboard() {
     </div>
     <div class="stat-card blue">
       <div class="stat-value">${fmt$(totalPedido)}</div>
-      <div class="stat-label">Total Pedido</div>
+      <div class="stat-label">Total Mi Pedido</div>
     </div>
   `;
 
@@ -313,7 +404,7 @@ function renderDashboard() {
   const clientesDelDia = clientes.filter(c => c.dia === diaHoy);
   const dashDiv = document.getElementById('dashTodayVisits');
   if (clientesDelDia.length === 0) {
-    dashDiv.innerHTML = emptyState('No hay clientes asignados para hoy.', 'Agrega clientes en la sección Clientes.');
+    dashDiv.innerHTML = emptyState('No tienes clientes asignados para hoy.', 'Los clientes creados o asignados por el Admin aparecerán aquí.');
   } else {
     dashDiv.innerHTML = clientesDelDia.map(c => {
       const vis = visitas.filter(v => v.clienteId === c.id && v.fecha === hoy);
@@ -347,6 +438,100 @@ function renderDashboard() {
     }).join('') + '</div>';
 }
 
+// ── DASHBOARD ADMIN ("ALGO BIEN CHIMBA") ─────────────────────
+function renderAdminDashboard() {
+  const todosClientes = DB.get('ap_clientes', []);
+  const todasVisitas = DB.get('ap_visitas', []);
+  const trabajadores = loadTrabajadores();
+  const hoy = todayISO();
+  const diaHoy = todayDia();
+
+  const visitasHoyTotal = todasVisitas.filter(v => v.fecha === hoy);
+  const completadasTotal = visitasHoyTotal.filter(v => v.estado === 'completada').length;
+  const clientesHoyTotal = todosClientes.filter(c => c.dia === diaHoy).length;
+  const ventaEquipo = visitasHoyTotal.filter(v => v.estado === 'completada')
+    .reduce((s, v) => s + (v.totalPedido || 0), 0);
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-value">${trabajadores.length}</div>
+      <div class="stat-label">Asesores Activos</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-value">${completadasTotal} / ${clientesHoyTotal}</div>
+      <div class="stat-label">Visitas Equipo Hoy</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-value">${fmt$(ventaEquipo)}</div>
+      <div class="stat-label">Ventas Equipo Hoy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${todosClientes.length}</div>
+      <div class="stat-label">Total Clientes Base</div>
+    </div>
+  `;
+
+  // Ranking y Tarjetas de cada Trabajador
+  const dashDiv = document.getElementById('dashTodayVisits');
+  
+  if (trabajadores.length === 0) {
+    dashDiv.innerHTML = emptyState('No hay trabajadores registrados', 'Haz clic en "Trabajadores / Equipo" en el menú para agregar el primer asesor.');
+  } else {
+    let cardsHtml = '<div style="margin-bottom:12px;font-weight:700;font-size:1.1rem;color:var(--gray-900)">📊 Estado en Tiempo Real por Asesor</div><div class="team-grid">';
+    
+    trabajadores.forEach(t => {
+      const clsTrabajador = todosClientes.filter(c => c.trabajadorId === t.cedula);
+      const clsHoyTrabajador = clsTrabajador.filter(c => c.dia === diaHoy);
+      
+      const vtsHoyTrabajador = todasVisitas.filter(v => v.fecha === hoy && clsTrabajador.some(c => c.id === v.clienteId));
+      const vtsCompletadas = vtsHoyTrabajador.filter(v => v.estado === 'completada').length;
+      const ventaTrabajador = vtsHoyTrabajador.filter(v => v.estado === 'completada').reduce((s,v) => s + (v.totalPedido || 0), 0);
+
+      const pct = clsHoyTrabajador.length ? Math.round((vtsCompletadas / clsHoyTrabajador.length) * 100) : 0;
+
+      cardsHtml += `
+        <div class="worker-card">
+          <div class="worker-avatar">${t.nombre[0].toUpperCase()}</div>
+          <div class="worker-info">
+            <div class="worker-name">${t.nombre}</div>
+            <div class="worker-meta">CC: ${t.cedula} &nbsp;·&nbsp; ${t.zona || 'Sin zona'}</div>
+            <div style="margin-top:6px;font-size:0.78rem;color:var(--gray-700)">
+              Visitas hoy: <strong>${vtsCompletadas} de ${clsHoyTrabajador.length}</strong> (${pct}%)
+            </div>
+            <div class="progress-bar-wrap" style="margin-top:4px;height:6px">
+              <div class="progress-bar" style="width:${pct}%"></div>
+            </div>
+          </div>
+          <div class="worker-stats">
+            <div class="worker-sales">${fmt$(ventaTrabajador)}</div>
+            <div class="worker-visits">${clsTrabajador.length} Clientes total</div>
+          </div>
+        </div>
+      `;
+    });
+
+    cardsHtml += '</div>';
+    dashDiv.innerHTML = cardsHtml;
+  }
+
+  // Progreso semanal consolidado
+  const semanaDiv = document.getElementById('dashWeekProgress');
+  semanaDiv.innerHTML = '<div class="week-progress-grid">' +
+    DIAS.map(dia => {
+      const cnt = todosClientes.filter(c => c.dia === dia).length;
+      const done = todasVisitas.filter(v => {
+        const cl = todosClientes.find(c => c.id === v.clienteId);
+        return cl && cl.dia === dia && v.estado === 'completada';
+      }).length;
+      const isToday = dia === diaHoy;
+      return `<div class="week-day-card${isToday ? ' today':''}">
+        <div class="day-name">${diasLabel(dia)}</div>
+        <div class="day-count">${cnt} cl.</div>
+        <div class="day-done">${done} ✓</div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
 function clienteVisitaCard(c, estado, visita) {
   const estLabel = { 'sin_visita':'Sin visitar', 'pendiente':'Pendiente', 'en_curso':'En curso', 'completada':'Completada', 'no_visitado':'No visitado' };
   return `<div class="visit-card ${estado}">
@@ -372,6 +557,118 @@ function emptyState(title, sub = '') {
     <strong>${title}</strong>
     ${sub ? `<p>${sub}</p>` : ''}
   </div>`;
+}
+
+// ── TRABAJADORES (ADMIN) ──────────────────────────────────────
+function renderTrabajadores(q = '') {
+  let trabajadores = loadTrabajadores();
+  if (q) {
+    const ql = q.toLowerCase();
+    trabajadores = trabajadores.filter(t =>
+      t.nombre.toLowerCase().includes(ql) ||
+      t.cedula.toLowerCase().includes(ql) ||
+      (t.zona || '').toLowerCase().includes(ql)
+    );
+  }
+
+  const list = document.getElementById('trabajadoresList');
+  if (!list) return;
+
+  if (trabajadores.length === 0) {
+    list.innerHTML = emptyState('No hay trabajadores registrados', 'Agrega asesores usando el botón "+ Registrar Asesor".');
+    return;
+  }
+
+  const clientes = DB.get('ap_clientes', []);
+
+  list.innerHTML = trabajadores.map(t => {
+    const cantClientes = clientes.filter(c => c.trabajadorId === t.cedula).length;
+    return `
+      <div class="worker-card" style="margin-bottom:12px">
+        <div class="worker-avatar">${t.nombre[0].toUpperCase()}</div>
+        <div class="worker-info">
+          <div class="worker-name">${t.nombre} <span class="role-badge trabajador">Asesor</span></div>
+          <div class="worker-meta">Cédula: <strong>${t.cedula}</strong> &nbsp;·&nbsp; Zona: ${t.zona || 'Sin zona'}</div>
+          ${t.telefono ? `<div class="worker-meta">📞 ${t.telefono}</div>` : ''}
+        </div>
+        <div class="worker-stats" style="display:flex;align-items:center;gap:10px">
+          <div>
+            <div class="worker-sales">${cantClientes} Clientes</div>
+          </div>
+          <button class="btn-edit-sm" data-edit-t="${t.id}" title="Editar">✏️</button>
+          <button class="btn-del-sm" data-del-t="${t.id}" title="Eliminar">🗑</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('[data-edit-t]').forEach(btn => {
+    btn.addEventListener('click', () => openTrabajadorModal(btn.dataset.editT));
+  });
+  list.querySelectorAll('[data-del-t]').forEach(btn => {
+    btn.addEventListener('click', () => deleteTrabajador(btn.dataset.delT));
+  });
+}
+
+function openTrabajadorModal(id) {
+  const trabajadores = loadTrabajadores();
+  const t = id ? trabajadores.find(x => x.id === id) : null;
+  document.getElementById('modalTrabajadorTitle').textContent = t ? 'Editar Asesor / Trabajador' : 'Nuevo Asesor / Trabajador';
+  document.getElementById('trabajadorId').value = t ? t.id : '';
+  document.getElementById('trabajadorCedula').value = t ? t.cedula : '';
+  document.getElementById('trabajadorNombre').value = t ? t.nombre : '';
+  document.getElementById('trabajadorZona').value = t ? t.zona || '' : '';
+  document.getElementById('trabajadorTelefono').value = t ? t.telefono || '' : '';
+  openModal('modalTrabajador');
+}
+
+function saveTrabajador() {
+  const id = document.getElementById('trabajadorId').value;
+  const cedula = document.getElementById('trabajadorCedula').value.trim();
+  const nombre = document.getElementById('trabajadorNombre').value.trim();
+
+  if (!cedula || !nombre) {
+    showToast('Cédula y nombre son obligatorios', 'error');
+    return;
+  }
+
+  const trabajadores = loadTrabajadores();
+  const existe = trabajadores.find(x => x.cedula === cedula && x.id !== id);
+  if (existe) {
+    showToast('Ya existe un trabajador con esa cédula', 'error');
+    return;
+  }
+
+  const data = {
+    id: id || uid(),
+    cedula,
+    nombre,
+    zona: document.getElementById('trabajadorZona').value.trim(),
+    telefono: document.getElementById('trabajadorTelefono').value.trim(),
+    rol: 'trabajador'
+  };
+
+  if (id) {
+    const idx = trabajadores.findIndex(x => x.id === id);
+    if (idx >= 0) trabajadores[idx] = data; else trabajadores.push(data);
+  } else {
+    trabajadores.push(data);
+  }
+
+  saveTrabajadores(trabajadores);
+  closeModal('modalTrabajador');
+  showToast(id ? 'Asesor actualizado ✓' : 'Asesor registrado ✓', 'success');
+  renderTrabajadores();
+  renderDashboard();
+}
+
+function deleteTrabajador(id) {
+  if (!confirm('¿Eliminar este trabajador del sistema?')) return;
+  const trabajadores = loadTrabajadores().filter(x => x.id !== id);
+  saveTrabajadores(trabajadores);
+  renderTrabajadores();
+  renderDashboard();
+  showToast('Trabajador eliminado', 'warning');
 }
 
 // ── CLIENTES ──────────────────────────────────────────────────
@@ -450,7 +747,7 @@ function renderClientes(q = '', diaFiltro = '') {
 }
 
 function openClienteModal(id) {
-  const clientes = loadClientes();
+  const clientes = loadClientes(true);
   const c = id ? clientes.find(x => x.id === id) : null;
   document.getElementById('modalClienteTitle').textContent = c ? 'Editar Cliente' : 'Nuevo Cliente';
   document.getElementById('clienteId').value = c ? c.id : '';
@@ -460,6 +757,14 @@ function openClienteModal(id) {
   document.getElementById('clienteDia').value = c ? c.dia : 'LUNES';
   document.getElementById('clienteTelefono').value = c ? c.telefono || '' : '';
   document.getElementById('clienteNotas').value = c ? c.notas || '' : '';
+
+  const selTrab = document.getElementById('clienteTrabajador');
+  if (selTrab) {
+    const trabajadores = loadTrabajadores();
+    selTrab.innerHTML = '<option value="">-- Sin Asignar --</option>' +
+      trabajadores.map(t => `<option value="${t.cedula}"${c && c.trabajadorId === t.cedula ? ' selected' : ''}>${t.nombre} (CC: ${t.cedula})</option>`).join('');
+  }
+
   openModal('modalCliente');
 }
 
@@ -468,7 +773,19 @@ function saveCliente() {
   const codigo = document.getElementById('clienteCodigo').value.trim();
   const nombre = document.getElementById('clienteNombre').value.trim();
   if (!codigo || !nombre) { showToast('Completa los campos obligatorios', 'error'); return; }
-  const clientes = loadClientes();
+
+  const clientes = loadClientes(true);
+  const sess = getSession();
+
+  let trabajadorId = '';
+  if (sess && sess.rol === 'trabajador') {
+    trabajadorId = sess.cedula;
+  } else {
+    trabajadorId = document.getElementById('clienteTrabajador') ? document.getElementById('clienteTrabajador').value : '';
+  }
+
+  const existingClient = id ? clientes.find(c => c.id === id) : null;
+
   const data = {
     id: id || uid(),
     codigo, nombre,
@@ -476,8 +793,10 @@ function saveCliente() {
     dia: document.getElementById('clienteDia').value,
     telefono: document.getElementById('clienteTelefono').value.trim(),
     notas: document.getElementById('clienteNotas').value.trim(),
-    creadoEn: id ? (clientes.find(c=>c.id===id)||{}).creadoEn || Date.now() : Date.now()
+    trabajadorId: trabajadorId || (existingClient ? existingClient.trabajadorId : ''),
+    creadoEn: existingClient ? existingClient.creadoEn || Date.now() : Date.now()
   };
+
   if (id) {
     const idx = clientes.findIndex(c => c.id === id);
     if (idx >= 0) clientes[idx] = data; else clientes.push(data);
