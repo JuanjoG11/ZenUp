@@ -141,7 +141,7 @@ function loadProductos() {
 function saveProductos(d) { DB.set('ap_productos', d); }
 function loadVisitas() { return DB.get('ap_visitas', []); }
 function saveVisitas(d) { DB.set('ap_visitas', d); }
-function loadConfig() { return DB.getObj('ap_config', { nombre: 'Asesor', zona: '' }); }
+function loadConfig() { return DB.getObj('ap_config', { codigo: '', nombre: 'Asesor', zona: '' }); }
 function saveConfig(d) { DB.set('ap_config', d); }
 
 // ── UTILS ─────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ function handleLogin(e) {
   const trabajadores = loadTrabajadores();
   const t = trabajadores.find(x => x.cedula === ced);
   if (t) {
-    setSession({ cedula: t.cedula, nombre: t.nombre, zona: t.zona || 'Zona General', rol: 'trabajador' });
+    setSession({ cedula: t.cedula, codigoVentas: t.codigoVentas || '', nombre: t.nombre, zona: t.zona || 'Zona General', rol: 'trabajador' });
     showToast(`¡Bienvenido ${t.nombre}! 👋`, 'success');
     checkLogin();
   } else {
@@ -353,10 +353,12 @@ function renderPerfil() {
   const inicial = (sess.nombre || 'A')[0].toUpperCase();
   document.getElementById('profileAvatar').textContent = inicial;
   document.getElementById('profileName').textContent = sess.nombre;
-  document.getElementById('profileZona').textContent = sess.rol === 'admin'
-    ? '👑 Administrador General'
-    : `📋 Asesor (CC: ${sess.cedula}) · ${sess.zona || 'Sin zona'}`;
-
+  if (sess.rol === 'admin') {
+    document.getElementById('profileZona').textContent = '👑 Administrador General';
+  } else {
+    const cod = sess.codigoVentas ? `Cód. ${sess.codigoVentas}` : `CC: ${sess.cedula}`;
+    document.getElementById('profileZona').textContent = `📋 Asesor Comercial: ${cod}`;
+  }
   if (sess.rol === 'trabajador') {
     document.body.classList.add('is-trabajador');
   } else {
@@ -591,7 +593,8 @@ function openAsesorPanel(cedula) {
   // Header info
   document.getElementById('asesorPanelAvatar').textContent = (t.nombre || 'A')[0].toUpperCase();
   document.getElementById('asesorPanelNombre').textContent = t.nombre;
-  document.getElementById('asesorPanelMeta').textContent = `CC: ${t.cedula} · ${t.zona || 'Sin zona'} · ${clsAsesor.length} clientes en base`;
+  document.getElementById('asesorPanelMeta').textContent =
+    `${t.codigoVentas ? `Cód. ${t.codigoVentas} · ` : ''}CC: ${t.cedula} · ${t.zona || 'Sin zona'} · ${clsAsesor.length} clientes`;
 
   // Render week pills (Semana 1, 2, 3, 4 + Total Mes)
   const semanasDiv = document.getElementById('asesorPanelSemanas');
@@ -746,7 +749,10 @@ function renderTrabajadores(q = '') {
         <div class="worker-avatar">${t.nombre[0].toUpperCase()}</div>
         <div class="worker-info">
           <div class="worker-name">${t.nombre} <span class="role-badge trabajador">Asesor</span></div>
-          <div class="worker-meta">Cédula: <strong>${t.cedula}</strong> &nbsp;·&nbsp; Zona: ${t.zona || 'Sin zona'}</div>
+          <div class="worker-meta">
+            ${t.codigoVentas ? `<strong>Cód. ${t.codigoVentas}</strong> &nbsp;·&nbsp;` : ''}
+            CC: ${t.cedula} &nbsp;·&nbsp; ${t.zona || 'Sin zona'}
+          </div>
           ${t.telefono ? `<div class="worker-meta">📞 ${t.telefono}</div>` : ''}
         </div>
         <div class="worker-stats" style="display:flex;align-items:center;gap:10px">
@@ -773,6 +779,7 @@ function openTrabajadorModal(id) {
   const t = id ? trabajadores.find(x => x.id === id) : null;
   document.getElementById('modalTrabajadorTitle').textContent = t ? 'Editar Asesor / Trabajador' : 'Nuevo Asesor / Trabajador';
   document.getElementById('trabajadorId').value = t ? t.id : '';
+  document.getElementById('trabajadorCodigoVentas').value = t ? t.codigoVentas || '' : '';
   document.getElementById('trabajadorCedula').value = t ? t.cedula : '';
   document.getElementById('trabajadorNombre').value = t ? t.nombre : '';
   document.getElementById('trabajadorZona').value = t ? t.zona || '' : '';
@@ -800,6 +807,7 @@ function saveTrabajador() {
   const data = {
     id: id || uid(),
     cedula,
+    codigoVentas: document.getElementById('trabajadorCodigoVentas').value.trim(),
     nombre,
     zona: document.getElementById('trabajadorZona').value.trim(),
     telefono: document.getElementById('trabajadorTelefono').value.trim(),
@@ -1131,9 +1139,19 @@ function openVisitaModal(clienteId, visitaId = null) {
   document.getElementById('visitaNotas').value = visita ? visita.notas || '' : '';
 
   document.getElementById('modalVisitaTitle').textContent = visita ? 'Editar Visita' : 'Nueva Visita';
-  document.getElementById('modalVisitaMeta').textContent = cliente
-    ? `${cliente.codigo} – ${cliente.nombre} | ${cliente.poblacion || ''} | ${diasLabel(cliente.dia)}`
+
+  // Encabezado con asesor comercial + datos del cliente (igual que el Excel)
+  const sess = getSession();
+  const codAsesor  = sess ? (sess.codigoVentas || sess.cedula) : '';
+  const nomAsesor  = sess ? sess.nombre : '';
+  const asesorStr  = codAsesor ? `Asesor Comercial: ${codAsesor} – ${nomAsesor}` : nomAsesor;
+  const clienteStr = cliente
+    ? `${cliente.codigo}  ${cliente.nombre}  |  ${cliente.poblacion || ''}  |  ${diasLabel(cliente.dia)}`
     : 'Visita general';
+  document.getElementById('modalVisitaMeta').innerHTML =
+    `<span class="meta-asesor">📋 ${asesorStr}</span>` +
+    `<span class="meta-sep"> &nbsp;·&nbsp; </span>` +
+    `<span class="meta-cliente">🏪 ${clienteStr}</span>`;
 
   // Cargar productos en la visita
   visitaProductos = visita ? JSON.parse(JSON.stringify(visita.productos || [])) : [];
@@ -1592,15 +1610,17 @@ function renderReportes() {
 // ── CONFIGURACIÓN ──────────────────────────────────────────────
 function openConfigModal() {
   const cfg = loadConfig();
+  document.getElementById('cfgCodigo').value = cfg.codigo || '';
   document.getElementById('cfgNombre').value = cfg.nombre || '';
-  document.getElementById('cfgZona').value = cfg.zona || '';
+  document.getElementById('cfgZona').value   = cfg.zona   || '';
   openModal('modalConfig');
 }
 
 function saveConfigData() {
   const cfg = {
+    codigo: document.getElementById('cfgCodigo').value.trim(),
     nombre: document.getElementById('cfgNombre').value.trim() || 'Asesor',
-    zona: document.getElementById('cfgZona').value.trim()
+    zona:   document.getElementById('cfgZona').value.trim()
   };
   saveConfig(cfg);
   renderPerfil();

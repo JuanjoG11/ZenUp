@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -387,9 +387,15 @@
           <button class="btn-close" data-close="modalConfig">✕</button>
         </div>
         <div class="modal-content">
-          <div class="field">
-            <label>Nombre del Asesor</label>
-            <input type="text" id="cfgNombre" placeholder="Tu nombre"/>
+          <div class="field-row">
+            <div class="field" style="max-width:120px">
+              <label>Código Asesor</label>
+              <input type="text" id="cfgCodigo" placeholder="25027"/>
+            </div>
+            <div class="field">
+              <label>Nombre del Asesor</label>
+              <input type="text" id="cfgNombre" placeholder="Adriana Calle"/>
+            </div>
           </div>
           <div class="field">
             <label>Zona / Región</label>
@@ -455,13 +461,19 @@
         <div class="modal-content">
           <form id="formTrabajador" autocomplete="off">
             <input type="hidden" id="trabajadorId"/>
-            <div class="field">
-              <label>Cédula de Identidad (Login) *</label>
-              <input type="text" id="trabajadorCedula" placeholder="ej: 1088123456" required/>
+            <div class="field-row">
+              <div class="field" style="max-width:130px">
+                <label>Código Asesor</label>
+                <input type="text" id="trabajadorCodigoVentas" placeholder="ej: 25027"/>
+              </div>
+              <div class="field">
+                <label>Cédula (Login) *</label>
+                <input type="text" id="trabajadorCedula" placeholder="ej: 1088123456" required/>
+              </div>
             </div>
             <div class="field">
               <label>Nombre Completo *</label>
-              <input type="text" id="trabajadorNombre" placeholder="ej: Juan Carlos Pérez" required/>
+              <input type="text" id="trabajadorNombre" placeholder="ej: ADRIANA CALLE ALVAREZ" required/>
             </div>
             <div class="field">
               <label>Zona / Ruta Asignada</label>

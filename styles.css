@@ -492,7 +492,13 @@ input.qty-vencido:focus { border-color: #7B1FA2; box-shadow: 0 0 0 3px rgba(123,
   flex-shrink: 0;
 }
 .modal-head h3 { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); }
-.modal-meta { font-size: 0.8rem; color: var(--gray-500); margin-top: 2px; }
+.modal-meta {
+  font-size: 0.78rem; color: var(--gray-600); margin-top: 4px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+}
+.meta-asesor { font-weight: 700; color: var(--orange); }
+.meta-sep    { color: var(--gray-400); }
+.meta-cliente { color: var(--gray-700); }
 .btn-close {
   width: 32px; height: 32px; border-radius: 50%;
   border: none; background: var(--gray-100); color: var(--gray-700);
