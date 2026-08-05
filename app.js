@@ -1554,6 +1554,32 @@ function renderReportes() {
   const agotadosTot = visitas.reduce((s,v) => s + (v.productos||[]).reduce((a,p) => a + (p.agotado||0), 0), 0);
   const vencidosTot = visitas.reduce((s,v) => s + (v.productos||[]).reduce((a,p) => a + (p.vencido||0), 0), 0);
 
+  // Top 15 clientes con más averías (agotados + vencidos)
+  const averiasMap = {};
+  visitas.forEach(v => {
+    const agotados = (v.productos||[]).reduce((s,p) => s + (p.agotado||0), 0);
+    const vencidos = (v.productos||[]).reduce((s,p) => s + (p.vencido||0), 0);
+    const total = agotados + vencidos;
+    if (total === 0) return;
+    const cl = clientes.find(c => c.id === v.clienteId);
+    const key = v.clienteId;
+    if (!averiasMap[key]) {
+      averiasMap[key] = {
+        nombre: cl ? cl.nombre : 'Cliente desconocido',
+        codigo: cl ? cl.codigo : '-',
+        agotados: 0,
+        vencidos: 0,
+        total: 0
+      };
+    }
+    averiasMap[key].agotados += agotados;
+    averiasMap[key].vencidos += vencidos;
+    averiasMap[key].total    += total;
+  });
+  const top15Averias = Object.values(averiasMap)
+    .sort((a,b) => b.total - a.total)
+    .slice(0, 15);
+
   // Top productos pedidos
   const pedMap = {};
   visitas.filter(v => v.estado === 'completada').forEach(v => {
@@ -1627,6 +1653,41 @@ function renderReportes() {
         </div>
       `).join('')}
     </div>` : '<div class="report-card"><p style="color:#9E9E9E;margin:0;text-align:center">Sin pedidos en este rango de fecha</p></div>'}
+
+    ${top15Averias.length > 0 ? `
+    <div class="report-card">
+      <h4>⚠️ Top 15 Clientes con Más Averías</h4>
+      <p style="font-size:0.78rem;color:#9E9E9E;margin:-6px 0 14px">Suma de productos agotados y vencidos por cliente en el período</p>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:0.83rem">
+          <thead>
+            <tr style="border-bottom:2px solid #EEE">
+              <th style="padding:6px 8px;text-align:left;color:#9E9E9E;font-weight:600">#</th>
+              <th style="padding:6px 8px;text-align:left;color:#9E9E9E;font-weight:600">Cliente</th>
+              <th style="padding:6px 4px;text-align:center;color:#C62828;font-weight:600">⚠️ Agotados</th>
+              <th style="padding:6px 4px;text-align:center;color:#673AB7;font-weight:600">🚫 Vencidos</th>
+              <th style="padding:6px 8px;text-align:center;color:#212121;font-weight:700">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${top15Averias.map((cl,i) => `
+              <tr style="border-bottom:1px solid #F5F5F5;${i===0?'background:#FFF8F8':''}">
+                <td style="padding:8px 8px;font-weight:700;color:${i<3?'#E65100':'#9E9E9E'}">${i+1}</td>
+                <td style="padding:8px 8px">
+                  <div style="font-weight:600;color:#212121">${cl.nombre.length>40?cl.nombre.substring(0,38)+'…':cl.nombre}</div>
+                  <div style="font-size:0.73rem;color:#9E9E9E">${cl.codigo || 'Sin código'}</div>
+                </td>
+                <td style="padding:8px 4px;text-align:center;font-weight:700;color:${cl.agotados>0?'#C62828':'#BDBDBD'}">${cl.agotados||0}</td>
+                <td style="padding:8px 4px;text-align:center;font-weight:700;color:${cl.vencidos>0?'#673AB7':'#BDBDBD'}">${cl.vencidos||0}</td>
+                <td style="padding:8px 8px;text-align:center">
+                  <span style="background:${cl.total>=5?'#FFEBEE':cl.total>=3?'#FFF3E0':'#F5F5F5'};color:${cl.total>=5?'#C62828':cl.total>=3?'#E65100':'#616161'};padding:2px 10px;border-radius:50px;font-weight:800;font-size:0.82rem">${cl.total}</span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ''}
   `;
 }
 
