@@ -259,9 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
     openVisitaModal(null);
   });
 
-  // Exportar
-  document.getElementById('exportBtn').addEventListener('click', exportarResumen);
-
   // Settings btn sidebar
   document.getElementById('settingsBtn').addEventListener('click', () => {
     closeSidebar();
