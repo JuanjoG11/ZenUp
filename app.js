@@ -189,17 +189,16 @@ function checkLogin() {
 function handleLogin(e) {
   if (e) e.preventDefault();
   const input = document.getElementById('loginCedula');
-  const ced = input ? input.value.trim() : '';
-  if (!ced) {
-    showToast('Ingresa una cédula válida', 'error');
+  const codigo = input ? input.value.trim() : '';
+  if (!codigo) {
+    showToast('Ingresa tu código de zona', 'error');
     return;
   }
 
-  if (ced === '0000') {
+  if (codigo === '0000') {
     setSession({ cedula: '0000', nombre: 'Administrador General', zona: 'Todas las zonas', rol: 'admin' });
     showToast('¡Bienvenido Administrador! 👑', 'success');
     checkLogin();
-    // Subir todos los datos locales al servidor en segundo plano
     setTimeout(() => {
       if (typeof uploadAllLocalData === 'function') uploadAllLocalData();
     }, 1500);
@@ -207,17 +206,16 @@ function handleLogin(e) {
   }
 
   const trabajadores = loadTrabajadores();
-  const t = trabajadores.find(x => x.cedula === ced);
+  const t = trabajadores.find(x => x.codigoVentas === codigo);
   if (t) {
     setSession({ cedula: t.cedula, codigoVentas: t.codigoVentas || '', nombre: t.nombre, zona: t.zona || 'Zona General', rol: 'trabajador' });
     showToast(`¡Bienvenido ${t.nombre}! 👋`, 'success');
     checkLogin();
-    // Sincronizar visitas del asesor
     setTimeout(() => {
       if (typeof fullSync === 'function') fullSync();
     }, 1500);
   } else {
-    showToast('Cédula no registrada. Contacta al Administrador.', 'error');
+    showToast('Código de zona no registrado. Contacta al Administrador.', 'error');
   }
 }
 

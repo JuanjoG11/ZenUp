@@ -6,16 +6,18 @@
 (function loadDemoData() {
   // Lista completa de asesores reales
   const trabajadores = [
-    { id: 't-001', cedula: '1005021309',  codigoVentas: '25027', nombre: 'ADRIANA CALLE ALVAREZ',              zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-002', cedula: '1112774849',  codigoVentas: '25024', nombre: 'ANYIE VIVIANA CARDONA DUQUE',         zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-000', cedula: '0001',        codigoVentas: '25020', nombre: 'VENTA DE OFICINA',                    zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-003', cedula: '1112783158',  codigoVentas: '25021', nombre: 'BRAYAN CAMILO ALZATE BUSTAMANTE',     zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-004', cedula: '1088327362',  codigoVentas: '25030', nombre: 'YEISSON STIVEN GAÑAN NIETO',          zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-005', cedula: '1088008480',  codigoVentas: '25031', nombre: 'ANA MARIA ACERO OCAMPO',             zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-006', cedula: '1088252454',  codigoVentas: '25028', nombre: 'ALBA YANETH SANCHEZ SOSSA',           zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-007', cedula: '1004719311',  codigoVentas: '25028', nombre: 'JUAN MANUEL RESTREPO ORREGO',         zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-008', cedula: '42016714',    codigoVentas: '25034', nombre: 'LUZ ANDREA (GEMELA) ALVAREZ MONTOYA', zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-009', cedula: '1112764385',  codigoVentas: '25035', nombre: 'JUAN GABRIEL OCAMPO MARIN',           zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-013', cedula: '1112785366',  codigoVentas: '25022', nombre: 'TATIANA',                             zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-010', cedula: '1087493266',  codigoVentas: '25023', nombre: 'TANIA ALEJANDRA ISAZA ARICAPA',       zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-002', cedula: '1112774849',  codigoVentas: '25024', nombre: 'ANYIE VIVIANA CARDONA DUQUE',         zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-009', cedula: '1112764385',  codigoVentas: '25025', nombre: 'JUAN GABRIEL OCAMPO MARIN',           zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-008', cedula: '42016714',    codigoVentas: '25026', nombre: 'LUZ ANDREA ALVAREZ MONTOYA',          zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-001', cedula: '1005021309',  codigoVentas: '25027', nombre: 'ADRIANA CALLE ALVAREZ',               zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-006', cedula: '1088252454',  codigoVentas: '25028', nombre: 'ALBA YANETH SANCHEZ SOSSA',           zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-007', cedula: '1004719311',  codigoVentas: '25029', nombre: 'JUAN MANUEL RESTREPO ORREGO',         zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-004', cedula: '1088327362',  codigoVentas: '25030', nombre: 'YEISSON STIVEN GAÑAN NIETO',          zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-005', cedula: '1088008480',  codigoVentas: '25031', nombre: 'ANA MARIA ACERO OCAMPO',              zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-011', cedula: '1112785365',  codigoVentas: '25037', nombre: 'ANGIE TATIANA BEDOYA CORREA',         zona: 'Pereira - Cuba / Perla del Sur', telefono: '', rol: 'trabajador' },
     { id: 't-012', cedula: '1088334239',  codigoVentas: '25038', nombre: 'CRISTHIAN DAVID CASTAÑO CORREA',      zona: '', telefono: '', rol: 'trabajador' },
   ];
