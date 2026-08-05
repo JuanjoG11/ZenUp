@@ -50,6 +50,7 @@
           <svg viewBox="0 0 24 24"><path d="M22.6 1L20 3.6C18.7 2.6 17.1 2 15.5 2c-3.2 0-5.9 1.8-7.3 4.4L6 4.3A9.9 9.9 0 0115.5 0c2.7 0 5.2 1.1 7.1 3zM1 3.1l2.5 2.5C2.6 7.1 2 8.8 2 10.5c0 4.7 3.8 8.5 8.5 8.5 1.7 0 3.3-.5 4.6-1.4L17.6 20C15.9 21.3 13.8 22 11.5 22 5.7 22 1 17.3 1 11.5 1 8.8 2 6.3 3.7 4.4L1 1.8l2.1-2.1L21.4 18l-2.1 2.1L1 3.1z" fill="currentColor"/></svg>
           Sin conexión
         </div>
+        <span class="sync-badge" id="syncStatusBadge"></span>
       </div>
     </header>
 
@@ -296,9 +297,27 @@
         <div class="modal-content">
           <input type="hidden" id="visitaId"/>
           <input type="hidden" id="visitaClienteId"/>
-          <input type="hidden" id="visitaFecha"/>
-          <input type="hidden" id="visitaEstado" value="completada"/>
-          <input type="hidden" id="visitaNotas" value=""/>
+
+          <!-- Barra de meta-datos de la visita -->
+          <div class="visita-meta-bar">
+            <div class="vmeta-field">
+              <label>📅 Fecha</label>
+              <input type="date" id="visitaFecha"/>
+            </div>
+            <div class="vmeta-field">
+              <label>📋 Estado</label>
+              <select id="visitaEstado">
+                <option value="en_curso">En Curso</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="completada">Completada</option>
+                <option value="no_visitado">No Visitado</option>
+              </select>
+            </div>
+            <div class="vmeta-field vmeta-notas">
+              <label>💬 Notas de la visita</label>
+              <input type="text" id="visitaNotas" placeholder="Ej: cliente pidió crédito, nevera llena, etc."/>
+            </div>
+          </div>
 
           <div class="productos-panel">
             <div class="productos-panel-head">

@@ -199,6 +199,10 @@ function handleLogin(e) {
     setSession({ cedula: '0000', nombre: 'Administrador General', zona: 'Todas las zonas', rol: 'admin' });
     showToast('¡Bienvenido Administrador! 👑', 'success');
     checkLogin();
+    // Subir todos los datos locales al servidor en segundo plano
+    setTimeout(() => {
+      if (typeof uploadAllLocalData === 'function') uploadAllLocalData();
+    }, 1500);
     return;
   }
 
@@ -208,6 +212,10 @@ function handleLogin(e) {
     setSession({ cedula: t.cedula, codigoVentas: t.codigoVentas || '', nombre: t.nombre, zona: t.zona || 'Zona General', rol: 'trabajador' });
     showToast(`¡Bienvenido ${t.nombre}! 👋`, 'success');
     checkLogin();
+    // Sincronizar visitas del asesor
+    setTimeout(() => {
+      if (typeof fullSync === 'function') fullSync();
+    }, 1500);
   } else {
     showToast('Cédula no registrada. Contacta al Administrador.', 'error');
   }
@@ -303,7 +311,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Guardar visita
-  document.getElementById('completeVisitaBtn').addEventListener('click', () => saveVisita('completada'));
+  document.getElementById('completeVisitaBtn').addEventListener('click', () => {
+    const totalProductos = visitaProductos.filter(vp => vp.pedira > 0 || vp.tiene > 0 || vp.agotado > 0 || vp.vencido > 0).length;
+    const msg = totalProductos > 0
+      ? `¿Marcar visita como completada?\n${totalProductos} producto(s) con datos registrados.`
+      : '¿Completar visita sin productos registrados?';
+    if (confirm(msg)) saveVisita('completada');
+  });
   document.getElementById('saveDraftBtn').addEventListener('click', () => saveVisita('pendiente'));
 
   // Config
@@ -496,9 +510,12 @@ function renderAdminDashboard() {
   }
 
   let html = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin: 16px 0 12px 0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin: 16px 0 12px 0; flex-wrap:wrap; gap:8px;">
       <span style="font-size:1.05rem; font-weight:800; color:var(--gray-900);">👥 Equipo de Asesores</span>
-      <small style="color:var(--gray-600);">👇 Toca un asesor para filtrar por días/semanas y ver sus clientes</small>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="fullSync && fullSync()" class="btn-outline btn-sm">🔄 Sincronizar</button>
+        <button onclick="uploadAllLocalData && uploadAllLocalData()" class="btn-primary btn-sm">☁️ Subir al servidor</button>
+      </div>
     </div>
     <div class="admin-vendors-grid">`;
 
@@ -1298,6 +1315,15 @@ function saveVisita(estadoForzado = null) {
     if (idx >= 0) visitas[idx] = data; else visitas.push(data);
   } else { visitas.push(data); }
   saveVisitas(visitas);
+
+  // Sincronizar con Supabase si está disponible
+  const sess = getSession();
+  const dataConTrabajador = { ...data, trabajadorId: sess ? sess.cedula : '' };
+  if (typeof syncVisita === 'function') {
+    syncVisita(dataConTrabajador).then(ok => {
+      if (ok && typeof updateSyncBadge === 'function') updateSyncBadge(true);
+    });
+  }
 
   closeModal('modalVisita');
   showToast(estado === 'completada' ? 'Visita completada ✓' : 'Borrador guardado', estado === 'completada' ? 'success' : '');

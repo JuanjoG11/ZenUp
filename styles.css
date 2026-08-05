@@ -95,12 +95,15 @@ ul { list-style: none; }
 }
 .btn-icon:hover { background: rgba(255,255,255,0.25); }
 .btn-icon svg { width: 22px; height: 22px; fill: white; }
-.offline-badge {
-  display: flex; align-items: center; gap: 4px;
-  background: rgba(0,0,0,0.25); color: white;
-  font-size: 0.75rem; padding: 4px 10px; border-radius: 20px;
+/* ── SYNC BADGE ── */
+.sync-badge {
+  font-size: 0.72rem; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px;
+  transition: all 0.3s ease;
 }
-.offline-badge svg { width: 14px; height: 14px; fill: white; }
+.sync-badge.ok      { background: rgba(46,125,50,0.2); color: #A5D6A7; }
+.sync-badge.syncing { background: rgba(255,255,255,0.15); color: white; }
+.sync-badge.offline { background: rgba(198,40,40,0.25); color: #FFCDD2; }
 
 /* ── SIDEBAR ── */
 .sidebar-overlay {
@@ -534,6 +537,31 @@ input.qty-vencido:focus { border-color: #7B1FA2; box-shadow: 0 0 0 3px rgba(123,
 .visita-top .field { min-width: 140px; }
 
 /* ── PRODUCTOS PANEL ── */
+.visita-meta-bar {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  padding: 12px 0 16px;
+  border-bottom: 2px solid var(--gray-200);
+  margin-bottom: 14px;
+}
+.vmeta-field {
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 130px;
+}
+.vmeta-field.vmeta-notas { flex: 2; min-width: 200px; }
+.vmeta-field label {
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.3px;
+}
+.vmeta-field input, .vmeta-field select {
+  border: 1.5px solid var(--gray-300); border-radius: var(--radius-xs);
+  padding: 8px 10px; font-size: 0.875rem;
+  background: white; color: var(--gray-900);
+  transition: border-color var(--transition);
+}
+.vmeta-field input:focus, .vmeta-field select:focus {
+  border-color: var(--orange); outline: none;
+}
+.vmeta-field select { cursor: pointer; }
 .productos-panel-head {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
