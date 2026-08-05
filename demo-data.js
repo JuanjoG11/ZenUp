@@ -750,6 +750,41 @@
       notas: '',
       trabajadorId: '1087493266',
       creadoEn: Date.now()
+    },
+
+    // ── VIERNES – TANIA ALEJANDRA ISAZA ───────────────────────
+    {
+      id: 'ti-v-001',
+      codigo: '600000487231',
+      nombre: 'COMPARE',
+      poblacion: 'VITERBO',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ti-v-002',
+      codigo: '600000448853',
+      nombre: 'MERCA PLUS VITERBO',
+      poblacion: 'VITERBO',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ti-v-003',
+      codigo: '600000448803',
+      nombre: 'SUPERMERCADO MERCATODO DE OCCIDENTE',
+      poblacion: 'VITERBO',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
     }
 
     // ── MIÉRCOLES ──────────────────────────────────────────────
