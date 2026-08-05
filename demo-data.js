@@ -8,7 +8,7 @@
   const trabajadores = [
     { id: 't-000', cedula: '0001',        codigoVentas: '25020', nombre: 'VENTA DE OFICINA',                    zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-003', cedula: '1112783158',  codigoVentas: '25021', nombre: 'BRAYAN CAMILO ALZATE BUSTAMANTE',     zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-013', cedula: '1112785366',  codigoVentas: '25022', nombre: 'TATIANA',                             zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-011', cedula: '1112785365',  codigoVentas: '25022', nombre: 'ANGIE TATIANA BEDOYA CORREA',         zona: 'Pereira - Cuba / Perla del Sur', telefono: '', rol: 'trabajador' },
     { id: 't-010', cedula: '1087493266',  codigoVentas: '25023', nombre: 'TANIA ALEJANDRA ISAZA ARICAPA',       zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-002', cedula: '1112774849',  codigoVentas: '25024', nombre: 'ANYIE VIVIANA CARDONA DUQUE',         zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-009', cedula: '1112764385',  codigoVentas: '25025', nombre: 'JUAN GABRIEL OCAMPO MARIN',           zona: '', telefono: '', rol: 'trabajador' },
@@ -18,7 +18,6 @@
     { id: 't-007', cedula: '1004719311',  codigoVentas: '25029', nombre: 'JUAN MANUEL RESTREPO ORREGO',         zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-004', cedula: '1088327362',  codigoVentas: '25030', nombre: 'YEISSON STIVEN GAÑAN NIETO',          zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-005', cedula: '1088008480',  codigoVentas: '25031', nombre: 'ANA MARIA ACERO OCAMPO',              zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-011', cedula: '1112785365',  codigoVentas: '25037', nombre: 'ANGIE TATIANA BEDOYA CORREA',         zona: 'Pereira - Cuba / Perla del Sur', telefono: '', rol: 'trabajador' },
     { id: 't-012', cedula: '1088334239',  codigoVentas: '25038', nombre: 'CRISTHIAN DAVID CASTAÑO CORREA',      zona: '', telefono: '', rol: 'trabajador' },
   ];
   localStorage.setItem('ap_trabajadores', JSON.stringify(trabajadores));
@@ -1075,18 +1074,17 @@
   // Siempre actualizar trabajadores (para que codigoVentas quede actualizado)
   localStorage.setItem('ap_trabajadores', JSON.stringify(trabajadores));
 
-  // Merge de clientes — agregar solo los que no existen por id
+  // Clientes — siempre actualizar los del demo (upsert por id)
+  // Así cualquier cambio de trabajadorId, nombre, etc. se aplica siempre
   const existentes = JSON.parse(localStorage.getItem('ap_clientes') || '[]');
-  const merged = [...existentes];
-  let agregados = 0;
-  clientes.forEach(c => {
-    if (!merged.find(e => e.id === c.id)) {
-      merged.push(c);
-      agregados++;
-    }
-  });
+  const mapaDemo = {};
+  clientes.forEach(c => { mapaDemo[c.id] = c; });
+  // Conservar clientes del usuario que no están en el demo (creados manualmente)
+  const soloUsuario = existentes.filter(e => !mapaDemo[e.id]);
+  // Los del demo siempre usan la versión del demo (actualizada)
+  const merged = [...clientes, ...soloUsuario];
   localStorage.setItem('ap_clientes', JSON.stringify(merged));
-  console.log(`✅ ZenUp Demo: trabajadores actualizados, ${agregados} clientes nuevos agregados (total: ${merged.length})`);
+  console.log(`✅ ZenUp Demo: trabajadores y ${clientes.length} clientes del demo actualizados (total: ${merged.length})`);
 
   // ── CATÁLOGO COMPLETO (siempre actualizar) ──────────────────
   const catalogo = [
