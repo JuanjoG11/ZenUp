@@ -1168,12 +1168,65 @@ function openVisitaModal(clienteId, visitaId = null) {
   // Cargar productos en la visita
   visitaProductos = visita ? JSON.parse(JSON.stringify(visita.productos || [])) : [];
 
+  const todosProductos = loadProductos();
+  const clienteIdRef = cliente ? cliente.id : (visita ? visita.clienteId : null);
+
   if (visitaProductos.length === 0) {
-    // Cargar TODO el catálogo con valores en cero — listos para llenar
-    const todosProductos = loadProductos();
-    visitaProductos = todosProductos.map(p => ({
-      productoId: p.id, tiene: 0, pedira: 0, agotado: 0, vencido: 0
-    }));
+    // Nueva visita — buscar última visita del MISMO DÍA DE SEMANA para precargar stock
+    // El cliente se visita semanalmente el mismo día, así que la referencia
+    // correcta es la semana anterior en ese mismo día de ruta.
+    const diaRuta = cliente ? cliente.dia : null; // ej: 'LUNES'
+
+    const ultimaVisita = clienteIdRef
+      ? visitas
+          .filter(v => {
+            if (v.clienteId !== clienteIdRef) return false;
+            if (!v.productos || v.productos.length === 0) return false;
+            if (visita && v.id === visita.id) return false; // excluir actual
+            // Verificar que la visita corresponde al mismo día de semana que el cliente
+            if (diaRuta && v.fecha) {
+              const [y, m, d] = v.fecha.split('-').map(Number);
+              const diaSemana = DIA_MAP[new Date(y, m - 1, d).getDay()];
+              if (diaSemana !== diaRuta) return false;
+            }
+            return true;
+          })
+          .sort((a, b) => {
+            if (b.fecha !== a.fecha) return b.fecha > a.fecha ? 1 : -1;
+            return (b.creadoEn || 0) - (a.creadoEn || 0);
+          })[0]
+      : null;
+
+    visitaProductos = todosProductos.map(p => {
+      const prev = ultimaVisita
+        ? ultimaVisita.productos.find(vp => vp.productoId === p.id)
+        : null;
+      return {
+        productoId: p.id,
+        tiene:   prev ? (prev.tiene  || 0) : 0,  // stock precargado de última visita
+        pedira:  0,                                // pedido arranca en 0
+        agotado: 0,
+        vencido: 0
+      };
+    });
+
+    if (ultimaVisita) {
+      showToast(`📋 Stock precargado desde visita del ${fmtDate(ultimaVisita.fecha)}`, '');
+    }
+
+  } else {
+    // Visita existente (borrador/edición) — hacer merge con catálogo actual
+    // por si se agregaron productos nuevos al catálogo después de guardar la visita
+    const idsEnVisita = new Set(visitaProductos.map(vp => vp.productoId));
+    todosProductos.forEach(p => {
+      if (!idsEnVisita.has(p.id)) {
+        // producto nuevo en catálogo, agregarlo en cero
+        visitaProductos.push({ productoId: p.id, tiene: 0, pedira: 0, agotado: 0, vencido: 0 });
+      }
+    });
+    // Mantener el orden del catálogo
+    const orden = todosProductos.map(p => p.id);
+    visitaProductos.sort((a, b) => orden.indexOf(a.productoId) - orden.indexOf(b.productoId));
   }
 
   renderVisitaTable();
