@@ -1203,15 +1203,15 @@ function openVisitaModal(clienteId, visitaId = null) {
         : null;
       return {
         productoId: p.id,
-        tiene:   prev ? (prev.tiene  || 0) : 0,  // stock precargado de última visita
-        pedira:  0,                                // pedido arranca en 0
-        agotado: 0,
-        vencido: 0
+        tiene:   prev ? (prev.tiene  || 0) : 0,
+        pedira:  prev ? (prev.pedira  || 0) : 0,
+        agotado: prev ? (prev.agotado || 0) : 0,
+        vencido: prev ? (prev.vencido || 0) : 0
       };
     });
 
     if (ultimaVisita) {
-      showToast(`📋 Stock precargado desde visita del ${fmtDate(ultimaVisita.fecha)}`, '');
+      showToast(`📋 Stock, pedidos y novedades precargados desde el ${fmtDate(ultimaVisita.fecha)}`, '');
     }
 
   } else {

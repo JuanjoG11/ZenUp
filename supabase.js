@@ -39,16 +39,16 @@ async function syncVisita(visita) {
     const { error } = await supabaseClient
       .from('visitas')
       .upsert({
-        id:           visita.id,
-        cliente_id:   visita.clienteId,
-        trabajador_id: visita.trabajadorId || '',
-        fecha:        visita.fecha,
-        estado:       visita.estado,
-        notas:        visita.notas || '',
-        productos:    JSON.stringify(visita.productos || []),
-        total_pedido: visita.totalPedido || 0,
-        creado_en:    new Date(visita.creadoEn || Date.now()).toISOString(),
-        actualizado_en: new Date().toISOString()
+        id:             visita.id,
+        cliente_id:     visita.clienteId,
+        trabajador_id:  visita.trabajadorId || '',
+        fecha:          visita.fecha,
+        estado:         visita.estado,
+        notas:          visita.notas || '',
+        productos:      JSON.stringify(visita.productos || []),
+        total_pedido:   visita.totalPedido || 0,
+        creado_en:      new Date(visita.creadoEn || Date.now()).toISOString(),
+        actualizado_en: new Date(visita.actualizadoEn || Date.now()).toISOString()
       }, { onConflict: 'id' });
     if (error) throw error;
     return true;
@@ -230,39 +230,74 @@ async function fullSync() {
   }
   updateSyncBadge('syncing');
 
-  // Push visitas locales
+  // Push visitas locales primero
   await pushAllPendingVisitas();
 
-  // Pull datos frescos del servidor (admin ve todo)
   const sess = JSON.parse(localStorage.getItem('ap_session') || 'null');
   const isAdmin = sess && sess.rol === 'admin';
 
   if (isAdmin) {
+    // Admin: traer todo del servidor
     const remoteTrab = await pullTrabajadores();
     if (remoteTrab && remoteTrab.length > 0) {
       localStorage.setItem('ap_trabajadores', JSON.stringify(remoteTrab));
     }
+
     const remoteClients = await pullClientes();
     if (remoteClients && remoteClients.length > 0) {
       localStorage.setItem('ap_clientes', JSON.stringify(remoteClients));
     }
+
     const remoteVisitas = await pullVisitas(null);
     if (remoteVisitas) {
-      // Merge: conservar locales no sincronizadas
       const local = JSON.parse(localStorage.getItem('ap_visitas') || '[]');
-      const merged = [...remoteVisitas];
-      local.forEach(lv => {
-        if (!merged.find(rv => rv.id === lv.id)) merged.push(lv);
+      // Merge: el más reciente (actualizadoEn) gana
+      const mapaRemoto = {};
+      remoteVisitas.forEach(rv => { mapaRemoto[rv.id] = rv; });
+      const mapaLocal = {};
+      local.forEach(lv => { mapaLocal[lv.id] = lv; });
+      // Unir todos los IDs
+      const todosIds = new Set([...Object.keys(mapaRemoto), ...Object.keys(mapaLocal)]);
+      const merged = [];
+      todosIds.forEach(id => {
+        const r = mapaRemoto[id];
+        const l = mapaLocal[id];
+        if (r && l) {
+          // Gana el más reciente
+          merged.push((l.actualizadoEn || 0) > (r.actualizadoEn || 0) ? l : r);
+        } else {
+          merged.push(r || l);
+        }
       });
       localStorage.setItem('ap_visitas', JSON.stringify(merged));
     }
   } else if (sess) {
+    // Asesor: push primero, luego traer solo SUS visitas del servidor
     const remoteVisitas = await pullVisitas(sess.cedula);
     if (remoteVisitas) {
       const local = JSON.parse(localStorage.getItem('ap_visitas') || '[]');
-      const merged = [...remoteVisitas];
-      local.forEach(lv => {
-        if (!merged.find(rv => rv.id === lv.id)) merged.push(lv);
+
+      // Solo conservar locales que pertenecen a este asesor
+      // (por si el dispositivo fue usado por otro asesor antes)
+      const localDelAsesor = local.filter(lv =>
+        !lv.trabajadorId || lv.trabajadorId === sess.cedula
+      );
+
+      const mapaRemoto = {};
+      remoteVisitas.forEach(rv => { mapaRemoto[rv.id] = rv; });
+      const mapaLocal = {};
+      localDelAsesor.forEach(lv => { mapaLocal[lv.id] = lv; });
+
+      const todosIds = new Set([...Object.keys(mapaRemoto), ...Object.keys(mapaLocal)]);
+      const merged = [];
+      todosIds.forEach(id => {
+        const r = mapaRemoto[id];
+        const l = mapaLocal[id];
+        if (r && l) {
+          merged.push((l.actualizadoEn || 0) > (r.actualizadoEn || 0) ? l : r);
+        } else {
+          merged.push(r || l);
+        }
       });
       localStorage.setItem('ap_visitas', JSON.stringify(merged));
     }
@@ -270,8 +305,15 @@ async function fullSync() {
 
   updateSyncBadge(true);
 
-  // Refrescar UI
-  if (typeof renderDashboard === 'function') renderDashboard();
+  // Refrescar solo la vista activa
+  if (typeof currentView !== 'undefined' && typeof renderDashboard === 'function') {
+    if (currentView === 'dashboard')    renderDashboard();
+    if (currentView === 'clientes'     && typeof renderClientes    === 'function') renderClientes();
+    if (currentView === 'visitas'      && typeof renderVisitasHoy  === 'function') renderVisitasHoy();
+    if (currentView === 'reportes'     && typeof renderReportes    === 'function') renderReportes();
+    if (currentView === 'trabajadores' && typeof renderTrabajadores=== 'function') renderTrabajadores();
+    if (currentView === 'semana'       && typeof renderSemana      === 'function') renderSemana();
+  }
 }
 
 // ── BADGE DE ESTADO DE SYNC ───────────────────────────────────
@@ -294,11 +336,21 @@ function updateSyncBadge(status) {
 // ── INICIALIZAR ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initSupabase();
+
   // Sincronizar al recuperar conexión
   window.addEventListener('online', () => {
-    showToast && showToast('Conexión restaurada — sincronizando...', '');
+    if (typeof showToast === 'function') showToast('Conexión restaurada — sincronizando...', '');
     setTimeout(fullSync, 1000);
   });
-  // Sincronización inicial si hay conexión
+
+  // Sincronización inicial
   setTimeout(fullSync, 2000);
+
+  // Auto-sync cada 60 segundos si hay sesión activa y conexión
+  setInterval(() => {
+    const sess = JSON.parse(localStorage.getItem('ap_session') || 'null');
+    if (sess && navigator.onLine) {
+      fullSync();
+    }
+  }, 60000);
 });
