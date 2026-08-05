@@ -7,7 +7,7 @@
   // Lista completa de asesores reales
   const trabajadores = [
     { id: 't-001', cedula: '1005021309',  codigoVentas: '25027', nombre: 'ADRIANA CALLE ALVAREZ',              zona: '', telefono: '', rol: 'trabajador' },
-    { id: 't-002', cedula: '1112774849',  codigoVentas: '25028', nombre: 'ANYIE VIVIANA CARDONA DUQUE',         zona: '', telefono: '', rol: 'trabajador' },
+    { id: 't-002', cedula: '1112774849',  codigoVentas: '25024', nombre: 'ANYIE VIVIANA CARDONA DUQUE',         zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-003', cedula: '1112783158',  codigoVentas: '25021', nombre: 'BRAYAN CAMILO ALZATE BUSTAMANTE',     zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-004', cedula: '1088327362',  codigoVentas: '25030', nombre: 'YEISSON STIVEN GAÑAN NIETO',          zona: '', telefono: '', rol: 'trabajador' },
     { id: 't-005', cedula: '1088008480',  codigoVentas: '25031', nombre: 'ANA MARIA ACERO OCAMPO',             zona: '', telefono: '', rol: 'trabajador' },
@@ -784,6 +784,181 @@
       telefono: '',
       notas: '',
       trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+
+    // ── LUNES – ANGIE VIVIANA CARDONA (cédula: 1112774849, cód: 25024) ──
+    {
+      id: 'av-l-001',
+      codigo: '600000582330',
+      nombre: 'SUPERMERCADO LA QUINTA',
+      poblacion: 'EL CAIRO',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-l-002',
+      codigo: '600000582205',
+      nombre: 'RAPITIENDA ALBAN',
+      poblacion: 'EL CAIRO',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-l-003',
+      codigo: '600000581814',
+      nombre: 'SUPERMERCADO LA COSECHA',
+      poblacion: 'EL CAIRO',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-l-004',
+      codigo: '600000304045',
+      nombre: 'ECO TIENDA',
+      poblacion: 'EL CAIRO',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-l-005',
+      codigo: '600000154786',
+      nombre: 'SUPERMERCADO CAMPESINO',
+      poblacion: 'LA ARGELIA',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-l-006',
+      codigo: '600000099138',
+      nombre: 'TIENDA PASCANO',
+      poblacion: 'LA ARGELIA',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+
+    // ── MIÉRCOLES – ANGIE VIVIANA CARDONA ─────────────────────
+    {
+      id: 'av-x-001',
+      codigo: '600000549579',
+      nombre: 'MAXI AVICOLA',
+      poblacion: 'EL CAIRO',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+
+    // ── JUEVES – ANGIE VIVIANA CARDONA ────────────────────────
+    {
+      id: 'av-j-001',
+      codigo: '600000585081',
+      nombre: 'AUTOSERVICIO MERCADITO',
+      poblacion: 'ANSERMA NUEVO',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-j-002',
+      codigo: '600000448776',
+      nombre: 'SUPERMERCADO LA TIENDA',
+      poblacion: 'ANSERMA NUEVO',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-j-003',
+      codigo: '600000448648',
+      nombre: 'AUTOSERVICIO CLARET',
+      poblacion: 'ANSERMA NUEVO',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+
+    // ── VIERNES – ANGIE VIVIANA CARDONA ───────────────────────
+    {
+      id: 'av-v-001',
+      codigo: '600000589229',
+      nombre: 'DISTRIBUIDORA DOÑA YEMA',
+      poblacion: 'CARTAGO',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-v-002',
+      codigo: '600000589222',
+      nombre: 'MEGA TIENDA MARISCAL',
+      poblacion: 'CARTAGO - MARISCAL ROBLEDO',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-v-003',
+      codigo: '600000505719',
+      nombre: 'SALSAMENTARIA COMBO K Y C',
+      poblacion: 'CARTAGO - MARISCAL ROBLEDO',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'av-v-004',
+      codigo: '600000448649',
+      nombre: 'TIENDA LA ESPERANZA',
+      poblacion: 'CARTAGO - EL LLANO',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
+      creadoEn: Date.now()
+    },
+
+    // ── SÁBADO – ANGIE VIVIANA CARDONA ────────────────────────
+    {
+      id: 'av-s-001',
+      codigo: '600000288511',
+      nombre: 'TIENDA LA AVENIDA',
+      poblacion: 'CARTAGO - LAS VERANERAS',
+      dia: 'SÁBADO',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112774849',
       creadoEn: Date.now()
     }
 
