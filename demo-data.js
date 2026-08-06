@@ -1087,6 +1087,194 @@
       notas: '',
       trabajadorId: '1112785365',
       creadoEn: Date.now()
+    },
+
+    // ── LUNES – GABRIEL OCAMPO ────────────────────────────────
+    {
+      id: 'gab-l-001',
+      codigo: '600000589182',
+      nombre: 'AUTOSERVICIO VILLA DEL ROBLE',
+      poblacion: 'EL CAIRO',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-l-002',
+      codigo: '600000584719',
+      nombre: 'MINIMERCADO LULA',
+      poblacion: 'PEREIRA - GALICIA',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+
+    // ── MARTES – GABRIEL OCAMPO ───────────────────────────────
+    {
+      id: 'gab-m-001',
+      codigo: '600000582332',
+      nombre: 'PANADERIA TAMAYO',
+      poblacion: 'CARTAGO',
+      dia: 'MARTES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-m-002',
+      codigo: '600000521236',
+      nombre: 'SAN DIEGO',
+      poblacion: 'CARTAGO - SAN VICENTE',
+      dia: 'MARTES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+
+    // ── MIÉRCOLES – GABRIEL OCAMPO ────────────────────────────
+    {
+      id: 'gab-x-001',
+      codigo: '600000589182',
+      nombre: 'AUTOSERVICIO VILLA DEL ROBLE',
+      poblacion: 'CARTAGO - LOS CÁMBULOS',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-x-002',
+      codigo: '600000589180',
+      nombre: 'MISCELANEA LA LIBERTAD JS',
+      poblacion: 'CARTAGO - LA INDEPENDENCIA',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-x-003',
+      codigo: '600000589163',
+      nombre: 'TIENDA FABI CARTAGO',
+      poblacion: 'CARTAGO - LA INDEPENDENCIA',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-x-004',
+      codigo: '600000516862',
+      nombre: 'TIENDA EL PARQUE',
+      poblacion: 'CARTAGO - LA ARBOLEDA',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-x-005',
+      codigo: '600000112785',
+      nombre: 'TIENDA MILAN',
+      poblacion: 'MILÁN',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+
+    // ── JUEVES – GABRIEL OCAMPO ───────────────────────────────
+    {
+      id: 'gab-j-001',
+      codigo: '600000582677',
+      nombre: 'SUPERMERCADO CHECHE',
+      poblacion: 'CARTAGO - LA INDEPENDENCIA',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-j-002',
+      codigo: '600000506657',
+      nombre: 'LA TIENDA DE ANCIZAR FORONDA',
+      poblacion: 'EL ÁGUILA',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-j-003',
+      codigo: '600000413284',
+      nombre: 'MERCAMPO',
+      poblacion: 'EL ÁGUILA',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+
+    // ── VIERNES – GABRIEL OCAMPO ──────────────────────────────
+    {
+      id: 'gab-v-001',
+      codigo: '600000419844',
+      nombre: 'RAPITIENDA MAX ECONOMIA',
+      poblacion: 'CARTAGO - GUADALUPE',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+
+    // ── SÁBADO – GABRIEL OCAMPO ───────────────────────────────
+    {
+      id: 'gab-s-001',
+      codigo: '600000586043',
+      nombre: 'CAFETERIA Y MISCELÁNEA ANA',
+      poblacion: 'CARTAGO - LA INDEPENDENCIA',
+      dia: 'SÁBADO',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-s-002',
+      codigo: '600000523161',
+      nombre: 'TIENDA LA CHICHIGUA',
+      poblacion: 'CARTAGO - VILLA SOL',
+      dia: 'SÁBADO',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'gab-s-003',
+      codigo: '600000507727',
+      nombre: 'SUPER TIENDA SHALO',
+      poblacion: 'CARTAGO - ZARAGOZA',
+      dia: 'SÁBADO',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112764385',
+      creadoEn: Date.now()
     }
   ];
 
