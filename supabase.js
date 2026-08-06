@@ -134,6 +134,29 @@ async function pullClientes() {
   }
 }
 
+async function pullClientesPorAsesor(cedula) {
+  if (!isSupabaseReady()) return null;
+  try {
+    const { data, error } = await supabaseClient
+      .from('clientes').select('*').eq('trabajador_id', cedula).order('nombre');
+    if (error) throw error;
+    return data.map(r => ({
+      id:           r.id,
+      codigo:       r.codigo,
+      nombre:       r.nombre,
+      poblacion:    r.poblacion || '',
+      dia:          r.dia,
+      telefono:     r.telefono || '',
+      notas:        r.notas || '',
+      trabajadorId: r.trabajador_id || '',
+      creadoEn:     new Date(r.creado_en).getTime()
+    }));
+  } catch (e) {
+    console.warn('Error trayendo clientes del asesor:', e.message);
+    return null;
+  }
+}
+
 async function pullTrabajadores() {
   if (!isSupabaseReady()) return null;
   try {
@@ -152,6 +175,45 @@ async function pullTrabajadores() {
   } catch (e) {
     console.warn('Error trayendo trabajadores:', e.message);
     return null;
+  }
+}
+
+async function pullProductos() {
+  if (!isSupabaseReady()) return null;
+  try {
+    const { data, error } = await supabaseClient
+      .from('productos').select('*').order('nombre');
+    if (error) throw error;
+    return data.map(r => ({
+      id:        r.id,
+      codigo:    r.codigo || '',
+      nombre:    r.nombre,
+      precio:    r.precio || 0,
+      categoria: r.categoria || ''
+    }));
+  } catch (e) {
+    console.warn('Error trayendo productos:', e.message);
+    return null;
+  }
+}
+
+async function syncProducto(producto) {
+  if (!isSupabaseReady()) return false;
+  try {
+    const { error } = await supabaseClient
+      .from('productos')
+      .upsert({
+        id:        producto.id,
+        codigo:    producto.codigo || '',
+        nombre:    producto.nombre,
+        precio:    producto.precio || 0,
+        categoria: producto.categoria || ''
+      }, { onConflict: 'id' });
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.warn('Error sincronizando producto:', e.message);
+    return false;
   }
 }
 
@@ -198,6 +260,24 @@ async function uploadAllLocalData() {
       if (error) console.warn('Error subiendo clientes:', error.message);
     }
     console.log(`✅ ${clientes.length} clientes subidos`);
+  }
+
+  // Subir productos del catálogo
+  const productos = JSON.parse(localStorage.getItem('ap_productos') || '[]');
+  if (productos.length > 0) {
+    const BATCH = 200;
+    for (let i = 0; i < productos.length; i += BATCH) {
+      const batch = productos.slice(i, i + BATCH).map(p => ({
+        id:        p.id,
+        codigo:    p.codigo || '',
+        nombre:    p.nombre,
+        precio:    p.precio || 0,
+        categoria: p.categoria || ''
+      }));
+      const { error } = await supabaseClient.from('productos').upsert(batch, { onConflict: 'id' });
+      if (error) console.warn('Error subiendo productos:', error.message);
+    }
+    console.log(`✅ ${productos.length} productos subidos`);
   }
 
   // Subir visitas existentes
@@ -248,6 +328,12 @@ async function fullSync() {
       localStorage.setItem('ap_clientes', JSON.stringify(remoteClients));
     }
 
+    // Productos: servidor es fuente de verdad (compartido entre todos)
+    const remoteProductos = await pullProductos();
+    if (remoteProductos && remoteProductos.length > 0) {
+      localStorage.setItem('ap_productos', JSON.stringify(remoteProductos));
+    }
+
     const remoteVisitas = await pullVisitas(null);
     if (remoteVisitas) {
       const local = JSON.parse(localStorage.getItem('ap_visitas') || '[]');
@@ -272,7 +358,36 @@ async function fullSync() {
       localStorage.setItem('ap_visitas', JSON.stringify(merged));
     }
   } else if (sess) {
-    // Asesor: push primero, luego traer solo SUS visitas del servidor
+    // Asesor: push primero, luego traer SUS clientes, productos y visitas del servidor
+
+    // 1. Clientes asignados a este asesor
+    const remoteClientes = await pullClientesPorAsesor(sess.cedula);
+    if (remoteClientes && remoteClientes.length > 0) {
+      // Merge con locales: conservar locales de otros asesores (si el cel fue compartido)
+      const localAll = JSON.parse(localStorage.getItem('ap_clientes') || '[]');
+      const localOtros = localAll.filter(c => c.trabajadorId && c.trabajadorId !== sess.cedula);
+      const mapaRemoto = {};
+      remoteClientes.forEach(rc => { mapaRemoto[rc.id] = rc; });
+      const mapaLocal = {};
+      localAll.filter(c => !c.trabajadorId || c.trabajadorId === sess.cedula)
+               .forEach(lc => { mapaLocal[lc.id] = lc; });
+      const todosIds = new Set([...Object.keys(mapaRemoto), ...Object.keys(mapaLocal)]);
+      const mergedClientes = [];
+      todosIds.forEach(id => {
+        const r = mapaRemoto[id];
+        const l = mapaLocal[id];
+        mergedClientes.push(r || l); // servidor siempre es la fuente de verdad para clientes
+      });
+      localStorage.setItem('ap_clientes', JSON.stringify([...localOtros, ...mergedClientes]));
+    }
+
+    // 2. Productos del catálogo (compartido, mismo para todos los asesores)
+    const remoteProductos = await pullProductos();
+    if (remoteProductos && remoteProductos.length > 0) {
+      localStorage.setItem('ap_productos', JSON.stringify(remoteProductos));
+    }
+
+    // 3. Visitas del asesor
     const remoteVisitas = await pullVisitas(sess.cedula);
     if (remoteVisitas) {
       const local = JSON.parse(localStorage.getItem('ap_visitas') || '[]');

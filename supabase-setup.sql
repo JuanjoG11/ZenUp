@@ -42,17 +42,30 @@ create table if not exists visitas (
   actualizado_en  timestamptz default now()
 );
 
--- 4. SEGURIDAD: habilitar RLS y permitir acceso con anon key
+-- 4. PRODUCTOS (catálogo compartido)
+create table if not exists productos (
+  id              text primary key,
+  codigo          text default '',
+  nombre          text not null,
+  precio          numeric default 0,
+  categoria       text default '',
+  creado_en       timestamptz default now()
+);
+
+-- 5. SEGURIDAD: habilitar RLS y permitir acceso con anon key
 alter table trabajadores enable row level security;
 alter table clientes      enable row level security;
 alter table visitas       enable row level security;
+alter table productos     enable row level security;
 
 drop policy if exists "allow_all_trabajadores" on trabajadores;
 drop policy if exists "allow_all_clientes"     on clientes;
 drop policy if exists "allow_all_visitas"      on visitas;
+drop policy if exists "allow_all_productos"    on productos;
 
 create policy "allow_all_trabajadores" on trabajadores for all using (true) with check (true);
 create policy "allow_all_clientes"     on clientes     for all using (true) with check (true);
 create policy "allow_all_visitas"      on visitas      for all using (true) with check (true);
+create policy "allow_all_productos"    on productos     for all using (true) with check (true);
 
 -- ✅ Listo. Recarga ZenUp y los datos se sincronizarán automáticamente.

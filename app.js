@@ -1,4 +1,4 @@
-/* ============================================================
+ /* ============================================================
    ZenUp – Lógica principal
    LocalStorage como base de datos offline-first
    ============================================================ */
@@ -183,6 +183,11 @@ function checkLogin() {
     if (loginOverlay) loginOverlay.classList.add('hidden');
     renderPerfil();
     renderDashboard();
+    // Sync silencioso al reabrir la app con sesión existente
+    // para que siempre refleje la última sesión del servidor
+    if (navigator.onLine && typeof fullSync === 'function') {
+      setTimeout(() => fullSync(), 1500);
+    }
   }
 }
 
@@ -196,24 +201,78 @@ function handleLogin(e) {
   }
 
   if (codigo === '0000') {
+    // Admin: guardar sesión, mostrar app con datos locales,
+    // luego sincronizar COMPLETAMENTE desde Supabase
     setSession({ cedula: '0000', nombre: 'Administrador General', zona: 'Todas las zonas', rol: 'admin' });
-    showToast('¡Bienvenido Administrador! 👑', 'success');
     checkLogin();
-    setTimeout(() => {
-      if (typeof uploadAllLocalData === 'function') uploadAllLocalData();
-    }, 1500);
+    if (navigator.onLine && typeof fullSync === 'function') {
+      showToast('🔄 Cargando datos del servidor...', '');
+      fullSync().then(() => {
+        renderDashboard();
+        showToast('✅ ¡Bienvenido Administrador! Datos actualizados 👑', 'success');
+      });
+    } else {
+      showToast('¡Bienvenido Administrador! (modo sin conexión) 👑', 'success');
+    }
     return;
   }
 
+  // Asesor: buscar primero en local, si no hay intentar en Supabase
   const trabajadores = loadTrabajadores();
   const t = trabajadores.find(x => x.codigoVentas === codigo);
+
   if (t) {
+    // Encontrado en local — login inmediato y luego sync
     setSession({ cedula: t.cedula, codigoVentas: t.codigoVentas || '', nombre: t.nombre, zona: t.zona || 'Zona General', rol: 'trabajador' });
-    showToast(`¡Bienvenido ${t.nombre}! 👋`, 'success');
     checkLogin();
-    setTimeout(() => {
-      if (typeof fullSync === 'function') fullSync();
-    }, 1500);
+    if (navigator.onLine && typeof fullSync === 'function') {
+      showToast('🔄 Sincronizando datos...', '');
+      fullSync().then(() => {
+        renderDashboard();
+        showToast(`✅ ¡Bienvenido ${t.nombre}! Datos actualizados 👋`, 'success');
+      });
+    } else {
+      showToast(`¡Bienvenido ${t.nombre}! (modo sin conexión) 👋`, 'success');
+    }
+  } else if (navigator.onLine && typeof supabaseClient !== 'undefined' && supabaseClient) {
+    // No está en local pero hay conexión → buscar en Supabase
+    // (útil cuando el asesor entra desde un dispositivo nuevo)
+    showToast('🔍 Buscando en el servidor...', '');
+    supabaseClient
+      .from('trabajadores')
+      .select('*')
+      .eq('codigo_ventas', codigo)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          showToast('Código de zona no registrado. Contacta al Administrador.', 'error');
+          return;
+        }
+        const remoto = {
+          id:           data.id,
+          cedula:       data.cedula,
+          codigoVentas: data.codigo_ventas || '',
+          nombre:       data.nombre,
+          zona:         data.zona || 'Zona General',
+          telefono:     data.telefono || '',
+          rol:          data.rol || 'trabajador'
+        };
+        // Guardar en local para futuras sesiones sin conexión
+        const lista = loadTrabajadores();
+        const idx = lista.findIndex(x => x.id === remoto.id);
+        if (idx >= 0) lista[idx] = remoto; else lista.push(remoto);
+        saveTrabajadores(lista);
+
+        setSession({ cedula: remoto.cedula, codigoVentas: remoto.codigoVentas, nombre: remoto.nombre, zona: remoto.zona, rol: 'trabajador' });
+        checkLogin();
+        showToast('🔄 Sincronizando datos...', '');
+        if (typeof fullSync === 'function') {
+          fullSync().then(() => {
+            renderDashboard();
+            showToast(`✅ ¡Bienvenido ${remoto.nombre}! Datos actualizados 👋`, 'success');
+          });
+        }
+      });
   } else {
     showToast('Código de zona no registrado. Contacta al Administrador.', 'error');
   }
@@ -1070,6 +1129,8 @@ function saveProducto() {
     if (idx >= 0) productos[idx] = data; else productos.push(data);
   } else { productos.push(data); }
   saveProductos(productos);
+  // Sincronizar con Supabase
+  if (typeof syncProducto === 'function') syncProducto(data);
   closeModal('modalProducto');
   showToast(id ? 'Producto actualizado ✓' : 'Producto agregado ✓', 'success');
   renderProductos();
@@ -1078,6 +1139,11 @@ function saveProducto() {
 function deleteProducto(id) {
   if (!confirm('¿Eliminar este producto del catálogo?')) return;
   saveProductos(loadProductos().filter(p => p.id !== id));
+  // Eliminar de Supabase también
+  if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof isSupabaseReady === 'function' && isSupabaseReady()) {
+    supabaseClient.from('productos').delete().eq('id', id)
+      .then(({ error }) => { if (error) console.warn('Error borrando producto en Supabase:', error.message); });
+  }
   renderProductos();
   showToast('Producto eliminado', 'warning');
 }
