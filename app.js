@@ -1836,9 +1836,14 @@ function clearAllData() {
   localStorage.removeItem('ap_config');
   localStorage.removeItem('ap_productos');
   closeModal('modalConfig');
-  renderDashboard();
-  showToast('Datos eliminados', 'warning');
-  renderPerfil();
+  showToast('Datos eliminados — recargando desde servidor...', 'warning');
+  // Re-sincronizar desde Supabase si hay conexión
+  if (navigator.onLine && typeof fullSync === 'function') {
+    setTimeout(() => fullSync().then(() => { renderDashboard(); renderPerfil(); }), 500);
+  } else {
+    renderDashboard();
+    renderPerfil();
+  }
 }
 
 // ── EXPORTAR RESUMEN ──────────────────────────────────────────

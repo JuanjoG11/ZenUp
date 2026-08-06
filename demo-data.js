@@ -1,9 +1,28 @@
 /* ============================================================
-   ZenUp – Datos de demostración
-   Asesores reales Zenú – Pereira
+   ZenUp – Datos de semilla (fallback offline de primer arranque)
+   SOLO corre si:
+   1. No hay sesión activa (nadie logueado todavía), Y
+   2. No hay trabajadores guardados en local (localStorage vacío)
+   Esto evita que sobreescriba datos reales en producción.
    ============================================================ */
 
 (function loadDemoData() {
+  // ── GUARDIA: no correr si ya hay datos reales ───────────────
+  const yaHayTrabajadores = (() => {
+    try { const t = JSON.parse(localStorage.getItem('ap_trabajadores')); return Array.isArray(t) && t.length > 0; } catch { return false; }
+  })();
+  const yaHayClientes = (() => {
+    try { const c = JSON.parse(localStorage.getItem('ap_clientes')); return Array.isArray(c) && c.length > 0; } catch { return false; }
+  })();
+
+  // Si ya hay datos en local, no tocar nada — Supabase se encargará del sync
+  if (yaHayTrabajadores || yaHayClientes) {
+    console.log('ℹ️ ZenUp Demo: datos locales existentes, semilla omitida.');
+    return;
+  }
+
+  console.log('🌱 ZenUp Demo: primer arranque sin datos — cargando semilla local.');
+
   // Lista completa de asesores reales
   const trabajadores = [
     { id: 't-000', cedula: '0001',        codigoVentas: '25020', nombre: 'VENTA DE OFICINA',                    zona: '', telefono: '', rol: 'trabajador' },
@@ -1236,9 +1255,16 @@
     { id:'1037764', codigo:'1037764', nombre:'VEGGIE BITES PIETRAN 200 G',             precio:14998, categoria:'VEGGIE' },
     { id:'1037765', codigo:'1037765', nombre:'VEGGIE BURGER PIETRAN 360 G',            precio:23353, categoria:'VEGGIE' },
   ];
-  // Siempre sobreescribir el catálogo con la versión completa y actualizada
-  localStorage.setItem('ap_productos', JSON.stringify(catalogo));
-  console.log(`✅ Catálogo actualizado: ${catalogo.length} productos`);
+  // Solo cargar catálogo si no hay uno ya (Supabase lo sincronizará después)
+  const yaHayProductos = (() => {
+    try { const p = JSON.parse(localStorage.getItem('ap_productos')); return Array.isArray(p) && p.length > 0; } catch { return false; }
+  })();
+  if (!yaHayProductos) {
+    localStorage.setItem('ap_productos', JSON.stringify(catalogo));
+    console.log(`🌱 Catálogo semilla cargado: ${catalogo.length} productos`);
+  } else {
+    console.log(`ℹ️ Catálogo ya existe, semilla omitida.`);
+  }
 
   if (typeof renderDashboard === 'function') {
     renderDashboard();
