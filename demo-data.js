@@ -7,21 +7,7 @@
    ============================================================ */
 
 (function loadDemoData() {
-  // ── GUARDIA: no correr si ya hay datos reales ───────────────
-  const yaHayTrabajadores = (() => {
-    try { const t = JSON.parse(localStorage.getItem('ap_trabajadores')); return Array.isArray(t) && t.length > 0; } catch { return false; }
-  })();
-  const yaHayClientes = (() => {
-    try { const c = JSON.parse(localStorage.getItem('ap_clientes')); return Array.isArray(c) && c.length > 0; } catch { return false; }
-  })();
-
-  // Si ya hay datos en local, no tocar nada — Supabase se encargará del sync
-  if (yaHayTrabajadores || yaHayClientes) {
-    console.log('ℹ️ ZenUp Demo: datos locales existentes, semilla omitida.');
-    return;
-  }
-
-  console.log('🌱 ZenUp Demo: primer arranque sin datos — cargando semilla local.');
+  console.log('🌱 ZenUp Demo: verificando datos de semilla...');
 
   // Lista completa de asesores reales
   const trabajadores = [
@@ -594,17 +580,6 @@
       trabajadorId: '1004719311',
       creadoEn: Date.now()
     },
-    {
-      id: 'jm-l-004',
-      codigo: '600000501195',
-      nombre: 'RAPITIENDA VILLA SOL Y MAS',
-      poblacion: 'PEREIRA - LA VILLA',
-      dia: 'LUNES',
-      telefono: '',
-      notas: '',
-      trabajadorId: '1004719311',
-      creadoEn: Date.now()
-    },
 
     // ── MARTES – JUAN MANUEL RESTREPO ─────────────────────────
     {
@@ -612,17 +587,6 @@
       codigo: '600000589205',
       nombre: 'TIENDA LA ECONOMIA',
       poblacion: 'PEREIRA',
-      dia: 'MARTES',
-      telefono: '',
-      notas: '',
-      trabajadorId: '1004719311',
-      creadoEn: Date.now()
-    },
-    {
-      id: 'jm-m-002',
-      codigo: '600000549616',
-      nombre: 'AUTOSERVICIO MERCA RAPI',
-      poblacion: 'PEREIRA - GUACARÍ',
       dia: 'MARTES',
       telefono: '',
       notas: '',
@@ -721,6 +685,30 @@
       trabajadorId: '1004719311',
       creadoEn: Date.now()
     },
+    {
+      id: 'jm-l-004',
+      codigo: '600000501195',
+      nombre: 'RAPITIENDA VILLA SOL Y MAS',
+      poblacion: 'PEREIRA - LA VILLA',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1004719311',
+      creadoEn: Date.now()
+    },
+
+    // ── VIERNES – JUAN MANUEL RESTREPO ────────────────────────
+    {
+      id: 'jm-m-002',
+      codigo: '600000549616',
+      nombre: 'AUTOSERVICIO MERCA RAPI',
+      poblacion: 'KM 10 SECTOR GUACARI VIA ARMENIA',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1004719311',
+      creadoEn: Date.now()
+    },
 
     // ── SÁBADO – JUAN MANUEL RESTREPO ─────────────────────────
     {
@@ -748,9 +736,90 @@
       creadoEn: Date.now()
     },
 
+    // ── MARTES – TANIA ALEJANDRA ISAZA ─────────────────────────
+    {
+      id: 'ti-m-001',
+      codigo: '600000541576',
+      nombre: 'SUPERMERCADO MERCAPAN',
+      poblacion: 'COMBIA',
+      dia: 'MARTES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ti-m-002',
+      codigo: '600000480843',
+      nombre: 'GRUPO GARCIA GOMEZ SAS',
+      poblacion: 'MARSELLA',
+      dia: 'MARTES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ti-m-003',
+      codigo: '600000475866',
+      nombre: 'CARNES Y GRANOS MEDELLIN',
+      poblacion: 'MARSELLA',
+      dia: 'MARTES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+
+    // ── MIÉRCOLES – TANIA ALEJANDRA ISAZA ──────────────────────
+    {
+      id: 'ti-x-001',
+      codigo: '600000580393',
+      nombre: 'SUPERMERCADO GLOBAL SAS',
+      poblacion: 'BELALCÁZAR',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ti-x-002',
+      codigo: '600000443907',
+      nombre: 'AUTOSERVICIO JM',
+      poblacion: 'BELALCÁZAR',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+
     // ── JUEVES – TANIA ALEJANDRA ISAZA ────────────────────────
     {
       id: 'ti-j-001',
+      codigo: '600000581238',
+      nombre: 'SUPERMERCADO EL GANADERO',
+      poblacion: 'MISTRATÓ',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ti-j-002',
+      codigo: '600000448798',
+      nombre: 'AUTOSERVICIO CENTRAL',
+      poblacion: 'BELÉN',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ti-j-003',
       codigo: '600000448679',
       nombre: 'SUPERMERCADO TRIUNFO DE BELEN',
       poblacion: 'BELÉN',
@@ -761,7 +830,18 @@
       creadoEn: Date.now()
     },
     {
-      id: 'ti-j-002',
+      id: 'ti-j-004',
+      codigo: '600000288486',
+      nombre: 'AUTOSERVICIO EL PROVEEDOR',
+      poblacion: 'BELÉN',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ti-j-005',
       codigo: '600000448666',
       nombre: 'AUTOSERVICIO MERCAHORRO',
       poblacion: 'BELÉN',
@@ -1275,6 +1355,172 @@
       notas: '',
       trabajadorId: '1112764385',
       creadoEn: Date.now()
+    },
+
+    // ── LUNES – LUZ ANDREA ÁLVAREZ (cédula: 42016714, cód: 25026) ──
+    {
+      id: 'luz-l-001',
+      codigo: '600000589290',
+      nombre: 'TIENDA MIXTA LA ACUARELA',
+      poblacion: 'PEREIRA - VILLA ELIZA CUBA',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'luz-l-002',
+      codigo: '600000561530',
+      nombre: 'MINIMERCADO LA FLORESTA',
+      poblacion: 'PEREIRA - 2500 LOTES',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+
+    // ── MARTES – LUZ ANDREA ÁLVAREZ ───────────────────────────
+    {
+      id: 'luz-m-001',
+      codigo: '600000589155',
+      nombre: 'SALSAMENTARIA DISTRIFIONA',
+      poblacion: 'PEREIRA - PARQUE INDUSTRIAL',
+      dia: 'MARTES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'luz-m-002',
+      codigo: '600000452934',
+      nombre: 'TIENDA DORA',
+      poblacion: 'PEREIRA - PARQUE INDUSTRIAL SECTOR B',
+      dia: 'MARTES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'luz-m-003',
+      codigo: '600000448007',
+      nombre: 'TIENDA LA MORENITA',
+      poblacion: 'PEREIRA',
+      dia: 'MARTES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'luz-m-004',
+      codigo: '600000116750',
+      nombre: 'TIENDA LA ABUELA DE ANA',
+      poblacion: 'PEREIRA - LAS PALMAS',
+      dia: 'MARTES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+
+    // ── MIÉRCOLES – LUZ ANDREA ÁLVAREZ ────────────────────────
+    {
+      id: 'luz-x-001',
+      codigo: '600000589219',
+      nombre: 'RAPITIENDA LOS PINOS',
+      poblacion: 'DOSQUEBRADAS - LOS PINOS',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'luz-x-002',
+      codigo: '600000572370',
+      nombre: 'RAPITIENDA BOSQUES',
+      poblacion: 'DOSQUEBRADAS - BOSQUES DE LA ACUARELA 3',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'luz-x-003',
+      codigo: '600000495174',
+      nombre: 'MISCELANEA D Y K',
+      poblacion: 'DOSQUEBRADAS - LOS PINOS',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'luz-x-004',
+      codigo: '600000168205',
+      nombre: 'TIENDA CELESTE Y HEIDER',
+      poblacion: 'DOSQUEBRADAS - LOS LAURELES',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+
+    // ── JUEVES – LUZ ANDREA ÁLVAREZ ───────────────────────────
+    {
+      id: 'luz-j-001',
+      codigo: '600000288718',
+      nombre: 'MINIMERCADO ALEX',
+      poblacion: 'PEREIRA - VILLA DEL PRADO',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+
+    // ── VIERNES – LUZ ANDREA ÁLVAREZ ──────────────────────────
+    {
+      id: 'luz-v-001',
+      codigo: '600000595795',
+      nombre: 'SUPERMARKET JYD',
+      poblacion: 'PEREIRA - 1 DE FEBRERO',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'luz-v-002',
+      codigo: '600000303846',
+      nombre: 'PANADERIA MAYORCA',
+      poblacion: 'PEREIRA - MAYORCA',
+      dia: 'VIERNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
+
+    // ── SÁBADO – LUZ ANDREA ÁLVAREZ ───────────────────────────
+    {
+      id: 'luz-s-001',
+      codigo: '600000157617',
+      nombre: 'FRUTAS Y VERDURAS EL PAISA 1',
+      poblacion: 'DOSQUEBRADAS - LA CAPILLA',
+      dia: 'SÁBADO',
+      telefono: '',
+      notas: '',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
     }
   ];
 
@@ -1285,9 +1531,10 @@
   // Así cualquier cambio de trabajadorId, nombre, etc. se aplica siempre
   const existentes = JSON.parse(localStorage.getItem('ap_clientes') || '[]');
   const mapaDemo = {};
+  const codigosDemo = new Set(clientes.map(c => c.codigo).filter(Boolean));
   clientes.forEach(c => { mapaDemo[c.id] = c; });
   // Conservar clientes del usuario que no están en el demo (creados manualmente)
-  const soloUsuario = existentes.filter(e => !mapaDemo[e.id]);
+  const soloUsuario = existentes.filter(e => !mapaDemo[e.id] && !codigosDemo.has(e.codigo));
   // Los del demo siempre usan la versión del demo (actualizada)
   const merged = [...clientes, ...soloUsuario];
   localStorage.setItem('ap_clientes', JSON.stringify(merged));
