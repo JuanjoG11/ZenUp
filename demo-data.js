@@ -1521,6 +1521,19 @@
       notas: '',
       trabajadorId: '42016714',
       creadoEn: Date.now()
+    },
+
+    // ── LUNES – VENTA DE OFICINA (cédula: 0001, cód: 25020) ──────
+    {
+      id: 'of-l-001',
+      codigo: '600000593840',
+      nombre: 'FIELD FOOD',
+      poblacion: 'PEREIRA - MERCASA MZ 17 BG 3',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '0001',
+      creadoEn: Date.now()
     }
   ];
 
