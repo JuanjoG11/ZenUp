@@ -135,7 +135,10 @@ function loadClientes(all = false) {
 function saveClientes(d) { DB.set('ap_clientes', d); }
 function loadProductos() {
   const p = DB.get('ap_productos', null);
-  if (!p) { DB.set('ap_productos', CATALOGO_INICIAL); return CATALOGO_INICIAL; }
+  if (!p || !Array.isArray(p) || p.length === 0) {
+    DB.set('ap_productos', CATALOGO_INICIAL);
+    return CATALOGO_INICIAL;
+  }
   return p;
 }
 function saveProductos(d) { DB.set('ap_productos', d); }
@@ -1191,7 +1194,7 @@ function addProductoToVisita(pid) {
 
 // ── VISITAS ────────────────────────────────────────────────────
 function openVisitaModal(clienteId, visitaId = null) {
-  const clientes = loadClientes();
+  const clientes = loadClientes(true);
   const visitas = loadVisitas();
   const hoy = todayISO();
 
@@ -1312,7 +1315,7 @@ function renderVisitaTable(filtro = '') {
       <th style="text-align:right">Precio</th>
       <th class="th-tiene" style="text-align:center">Stock</th>
       <th class="th-pide" style="text-align:center">A pedir</th>
-      <th class="th-agotado" style="text-align:center">Agotado</th>
+      <th class="th-agotado" style="text-align:center">Inventario</th>
       <th class="th-vencido" style="text-align:center">Vencido</th>
     </tr>`;
   }
@@ -1781,7 +1784,7 @@ function renderReportes() {
             <tr style="border-bottom:2px solid #EEE">
               <th style="padding:6px 8px;text-align:left;color:#9E9E9E;font-weight:600">#</th>
               <th style="padding:6px 8px;text-align:left;color:#9E9E9E;font-weight:600">Cliente</th>
-              <th style="padding:6px 4px;text-align:center;color:#C62828;font-weight:600">⚠️ Agotados</th>
+              <th style="padding:6px 4px;text-align:center;color:#C62828;font-weight:600">📋 Inventario</th>
               <th style="padding:6px 4px;text-align:center;color:#673AB7;font-weight:600">🚫 Vencidos</th>
               <th style="padding:6px 8px;text-align:center;color:#212121;font-weight:700">Total</th>
             </tr>
@@ -1882,7 +1885,7 @@ function exportarResumen() {
     if (vis.productos && vis.productos.length > 0) {
       texto += `\n  PRODUCTOS:\n`;
       texto += `  ${'─'.repeat(60)}\n`;
-      texto += `  ${'CÓDIGO'.padEnd(12)} ${'PRODUCTO'.padEnd(28)} ${'TIENE'.padStart(6)} ${'PIDE'.padStart(6)} ${'AGOT'.padStart(5)} ${'VENC'.padStart(5)}\n`;
+      texto += `  ${'CÓDIGO'.padEnd(12)} ${'PRODUCTO'.padEnd(28)} ${'TIENE'.padStart(6)} ${'PIDE'.padStart(6)} ${'INV'.padStart(5)} ${'VENC'.padStart(5)}\n`;
       texto += `  ${'─'.repeat(68)}\n`;
 
       let totalCliente = 0;
@@ -1890,7 +1893,7 @@ function exportarResumen() {
         const p = productos.find(x => x.id === vp.productoId);
         if (!p) return;
         const flags = [];
-        if (vp.agotado > 0) flags.push(`AGOTADO:${vp.agotado}`);
+        if (vp.agotado > 0) flags.push(`INVENTARIO:${vp.agotado}`);
         if (vp.vencido > 0) flags.push(`VENCIDO:${vp.vencido}`);
         const flagStr = flags.length > 0 ? ` [${flags.join(',')}]` : '';
         const agotStr = String(vp.agotado||0).padStart(5);
@@ -2026,7 +2029,7 @@ function openHistorialModal(clienteId) {
       const tTiene  = trend(vp.tiene  || 0, prevVp ? prevVp.tiene  || 0 : 0);
       const tPedira = trend(vp.pedira || 0, prevVp ? prevVp.pedira || 0 : 0);
 
-      const agotadoBadge = vp.agotado ? '<span class="badge-agotado">Agotado</span>' : '';
+      const agotadoBadge = vp.agotado ? '<span class="badge-agotado">Inventario</span>' : '';
       const vencidoBadge = vp.vencido ? '<span class="badge-vencido">Vencido</span>' : '';
       const estadoStr = [agotadoBadge, vencidoBadge].filter(Boolean).join(' ') || '<span class="text-muted font-sm">Ok</span>';
 

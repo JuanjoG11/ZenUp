@@ -1714,6 +1714,36 @@
     console.log(`ℹ️ Catálogo ya existe, semilla omitida.`);
   }
 
+  // Semilla de visita con productos para FIELD FOOD (of-l-001)
+  try {
+    const visitasLocales = JSON.parse(localStorage.getItem('ap_visitas') || '[]');
+    if (!visitasLocales.some(v => v.clienteId === 'of-l-001')) {
+      const prodsVisita = catalogo.map(p => ({
+        productoId: p.id,
+        tiene: 0,
+        pedira: 0,
+        agotado: 0,
+        vencido: 0
+      }));
+      visitasLocales.push({
+        id: 'vis-of-001',
+        clienteId: 'of-l-001',
+        trabajadorId: '0001',
+        fecha: new Date().toISOString().split('T')[0],
+        estado: 'en_curso',
+        notas: '',
+        productos: prodsVisita,
+        totalPedido: 0,
+        creadoEn: Date.now(),
+        actualizadoEn: Date.now()
+      });
+      localStorage.setItem('ap_visitas', JSON.stringify(visitasLocales));
+      console.log('✅ Visita inicial creada para FIELD FOOD con 147 productos.');
+    }
+  } catch (e) {
+    console.warn('Error inicializando visita de oficina:', e);
+  }
+
   if (typeof renderDashboard === 'function') {
     renderDashboard();
     if (typeof renderPerfil === 'function') renderPerfil();
