@@ -583,17 +583,6 @@
 
     // ── MARTES – JUAN MANUEL RESTREPO ─────────────────────────
     {
-      id: 'jm-m-001',
-      codigo: '600000589205',
-      nombre: 'TIENDA LA ECONOMIA',
-      poblacion: 'PEREIRA',
-      dia: 'MARTES',
-      telefono: '',
-      notas: '',
-      trabajadorId: '1004719311',
-      creadoEn: Date.now()
-    },
-    {
       id: 'jm-m-003',
       codigo: '600000435677',
       nombre: 'LOS COSTEÑOS',
@@ -702,7 +691,7 @@
       id: 'jm-m-002',
       codigo: '600000549616',
       nombre: 'AUTOSERVICIO MERCA RAPI',
-      poblacion: 'KM 10 SECTOR GUACARI VIA ARMENIA',
+      poblacion: 'PEREIRA - GUACARÍ',
       dia: 'VIERNES',
       telefono: '',
       notas: '',
@@ -1545,9 +1534,9 @@
   const existentes = JSON.parse(localStorage.getItem('ap_clientes') || '[]');
   const mapaDemo = {};
   const codigosDemo = new Set(clientes.map(c => c.codigo).filter(Boolean));
-  clientes.forEach(c => { mapaDemo[c.id] = c; });
-  // Conservar clientes del usuario que no están en el demo (creados manualmente)
-  const soloUsuario = existentes.filter(e => !mapaDemo[e.id] && !codigosDemo.has(e.codigo));
+  const eliminados = new Set(['jm-m-001', '600000589205']);
+  // Conservar clientes del usuario que no están en el demo (creados manualmente), excluyendo eliminados
+  const soloUsuario = existentes.filter(e => !mapaDemo[e.id] && !codigosDemo.has(e.codigo) && !eliminados.has(e.id) && !eliminados.has(e.codigo));
   // Los del demo siempre usan la versión del demo (actualizada)
   const merged = [...clientes, ...soloUsuario];
   localStorage.setItem('ap_clientes', JSON.stringify(merged));
