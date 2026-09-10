@@ -366,17 +366,6 @@
       trabajadorId: '1088252454',
       creadoEn: Date.now()
     },
-    {
-      id: 'ay-j-003',
-      codigo: '600000584004',
-      nombre: 'MINIMERCADO CENTENARIO',
-      poblacion: 'PEREIRA - EL POBLADO',
-      dia: 'JUEVES',
-      telefono: '',
-      notas: '',
-      trabajadorId: '1088252454',
-      creadoEn: Date.now()
-    },
 
     // ── SÁBADO – ALBA YANETH SANCHEZ ──────────────────────────
     {
@@ -488,9 +477,20 @@
     // ── JUEVES – BRAYAN CAMILO ALZATE ─────────────────────────
     {
       id: 'bc-j-001',
-      codigo: '600000558736',
-      nombre: 'MINI MARKET SHARA',
-      poblacion: 'SANTA MÓNICA',
+      codigo: '600000589231',
+      nombre: 'CAMPOLLO 2',
+      poblacion: 'DOSQUEBRADAS - CR 21 23 26',
+      dia: 'JUEVES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1112783158',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'bc-j-002',
+      codigo: '600000542249',
+      nombre: 'MINIMERCADO LA CALIDAD',
+      poblacion: 'DOSQUEBRADAS - CL 12 21B 15 LA AURORA',
       dia: 'JUEVES',
       telefono: '',
       notas: '',
@@ -1546,7 +1546,7 @@
   const mapaDemo = {};
   clientes.forEach(c => { mapaDemo[c.id] = true; });
   const codigosDemo = new Set(clientes.map(c => c.codigo).filter(Boolean));
-  const eliminados = new Set(['jm-m-001', '600000589205']);
+  const eliminados = new Set(['jm-m-001', '600000589205', '600000558736', '600000584004', 'ay-j-003']);
   // Conservar clientes del usuario que no están en el demo (creados manualmente), excluyendo eliminados
   const soloUsuario = existentes.filter(e => !mapaDemo[e.id] && !codigosDemo.has(e.codigo) && !eliminados.has(e.id) && !eliminados.has(e.codigo));
   // Los del demo siempre usan la versión del demo (actualizada)
