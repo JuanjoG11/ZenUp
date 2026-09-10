@@ -724,6 +724,28 @@
       trabajadorId: '1087493266',
       creadoEn: Date.now()
     },
+    {
+      id: 'ti-l-002',
+      codigo: '600000448679',
+      nombre: 'SUPERMERCADO TRIUNFO DE BELEN',
+      poblacion: 'BELÉN',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ti-l-003',
+      codigo: '600000448666',
+      nombre: 'AUTOSERVICIO MERCAHORRO',
+      poblacion: 'BELÉN',
+      dia: 'LUNES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1087493266',
+      creadoEn: Date.now()
+    },
 
     // ── MARTES – TANIA ALEJANDRA ISAZA ─────────────────────────
     {
@@ -800,7 +822,7 @@
       id: 'ti-j-002',
       codigo: '600000448798',
       nombre: 'AUTOSERVICIO CENTRAL',
-      poblacion: 'BELÉN',
+      poblacion: 'BELÉN - CR 10 06 06',
       dia: 'JUEVES',
       telefono: '',
       notas: '',
@@ -809,17 +831,6 @@
     },
     {
       id: 'ti-j-003',
-      codigo: '600000448679',
-      nombre: 'SUPERMERCADO TRIUNFO DE BELEN',
-      poblacion: 'BELÉN',
-      dia: 'JUEVES',
-      telefono: '',
-      notas: '',
-      trabajadorId: '1087493266',
-      creadoEn: Date.now()
-    },
-    {
-      id: 'ti-j-004',
       codigo: '600000288486',
       nombre: 'AUTOSERVICIO EL PROVEEDOR',
       poblacion: 'BELÉN',
@@ -830,10 +841,10 @@
       creadoEn: Date.now()
     },
     {
-      id: 'ti-j-005',
-      codigo: '600000448666',
-      nombre: 'AUTOSERVICIO MERCAHORRO',
-      poblacion: 'BELÉN',
+      id: 'ti-j-004',
+      codigo: '600000571717',
+      nombre: 'AUTOSERVICIO MERCA PLAZA BELEN',
+      poblacion: 'BELÉN - CR 10 5 32',
       dia: 'JUEVES',
       telefono: '',
       notas: '',
@@ -1533,6 +1544,7 @@
   // Así cualquier cambio de trabajadorId, nombre, etc. se aplica siempre
   const existentes = JSON.parse(localStorage.getItem('ap_clientes') || '[]');
   const mapaDemo = {};
+  clientes.forEach(c => { mapaDemo[c.id] = true; });
   const codigosDemo = new Set(clientes.map(c => c.codigo).filter(Boolean));
   const eliminados = new Set(['jm-m-001', '600000589205']);
   // Conservar clientes del usuario que no están en el demo (creados manualmente), excluyendo eliminados
@@ -1729,8 +1741,60 @@
       localStorage.setItem('ap_visitas', JSON.stringify(visitasLocales));
       console.log('✅ Visita inicial creada para FIELD FOOD con 147 productos.');
     }
+
+    // Semilla de visita con inventario para AUTOSERVICIO CENTRAL (ti-j-002)
+    if (!visitasLocales.some(v => v.clienteId === 'ti-j-002')) {
+      const plantilla = visitasLocales.find(v => v.productos && v.productos.length > 0 && v.totalPedido > 0) || visitasLocales.find(v => v.productos && v.productos.length > 0);
+      const prodsVisita = plantilla ? JSON.parse(JSON.stringify(plantilla.productos)) : catalogo.map(p => ({
+        productoId: p.id,
+        tiene: 0,
+        pedira: 0,
+        agotado: 0,
+        vencido: 0
+      }));
+      visitasLocales.push({
+        id: 'vis-ti-j-002',
+        clienteId: 'ti-j-002',
+        trabajadorId: '1087493266',
+        fecha: new Date().toISOString().split('T')[0],
+        estado: 'completada',
+        notas: '',
+        productos: prodsVisita,
+        totalPedido: plantilla ? (plantilla.totalPedido || 431910) : 431910,
+        creadoEn: Date.now(),
+        actualizadoEn: Date.now()
+      });
+      localStorage.setItem('ap_visitas', JSON.stringify(visitasLocales));
+      console.log('✅ Visita con inventario creada para AUTOSERVICIO CENTRAL.');
+    }
+
+    // Semilla de visita con inventario para AUTOSERVICIO MERCA PLAZA BELEN (ti-j-004)
+    if (!visitasLocales.some(v => v.clienteId === 'ti-j-004')) {
+      const plantilla = visitasLocales.find(v => v.productos && v.productos.length > 0 && v.totalPedido > 0) || visitasLocales.find(v => v.productos && v.productos.length > 0);
+      const prodsVisita = plantilla ? JSON.parse(JSON.stringify(plantilla.productos)) : catalogo.map(p => ({
+        productoId: p.id,
+        tiene: 0,
+        pedira: 0,
+        agotado: 0,
+        vencido: 0
+      }));
+      visitasLocales.push({
+        id: 'vis-ti-j-004',
+        clienteId: 'ti-j-004',
+        trabajadorId: '1087493266',
+        fecha: new Date().toISOString().split('T')[0],
+        estado: 'completada',
+        notas: '',
+        productos: prodsVisita,
+        totalPedido: plantilla ? (plantilla.totalPedido || 128591) : 128591,
+        creadoEn: Date.now(),
+        actualizadoEn: Date.now()
+      });
+      localStorage.setItem('ap_visitas', JSON.stringify(visitasLocales));
+      console.log('✅ Visita con inventario creada para AUTOSERVICIO MERCA PLAZA BELEN.');
+    }
   } catch (e) {
-    console.warn('Error inicializando visita de oficina:', e);
+    console.warn('Error inicializando visita de oficina, central o merca plaza:', e);
   }
 
   if (typeof renderDashboard === 'function') {
