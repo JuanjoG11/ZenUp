@@ -122,28 +122,6 @@
       trabajadorId: '1005021309',
       creadoEn: Date.now()
     },
-    {
-      id: 'ca-m-004',
-      codigo: '600000331267',
-      nombre: 'TIENDA EL JARDIN',
-      poblacion: 'DOSQUEBRADAS',
-      dia: 'MARTES',
-      telefono: '',
-      notas: '',
-      trabajadorId: '1005021309',
-      creadoEn: Date.now()
-    },
-    {
-      id: 'ca-m-005',
-      codigo: '600000288581',
-      nombre: 'SURTI MARKET',
-      poblacion: 'DOSQUEBRADAS',
-      dia: 'MARTES',
-      telefono: '',
-      notas: '',
-      trabajadorId: '1005021309',
-      creadoEn: Date.now()
-    },
 
     // ── LUNES – ADRIANA CALLE ─────────────────────────────────
     {
@@ -221,6 +199,30 @@
       nombre: 'RAPITIENDA LOS GARCIA',
       poblacion: 'DOSQUEBRADAS - FRAILES',
       dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1005021309',
+      creadoEn: Date.now()
+    },
+    {
+      id: 'ca-m-005',
+      codigo: '600000288581',
+      nombre: 'SURTI MARKET',
+      poblacion: 'DOSQUEBRADAS',
+      dia: 'MIÉRCOLES',
+      telefono: '',
+      notas: '',
+      trabajadorId: '1005021309',
+      creadoEn: Date.now()
+    },
+
+    // ── VIERNES – ADRIANA CALLE ───────────────────────────────
+    {
+      id: 'ca-m-004',
+      codigo: '600000331267',
+      nombre: 'TIENDA EL JARDIN',
+      poblacion: 'DOSQUEBRADAS',
+      dia: 'VIERNES',
       telefono: '',
       notas: '',
       trabajadorId: '1005021309',
