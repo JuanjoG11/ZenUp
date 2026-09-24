@@ -2051,9 +2051,12 @@ function openHistorialModal(clienteId) {
             <span class="hist-fecha">${fecha}</span>
             <span class="hist-badge ${estadoClass}">${estadoBadge}</span>
           </div>
-          <div class="hist-total-badge">
-            <span class="hist-total-label">Total Pedido:</span>
-            <strong>${totalFmt}</strong>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="hist-total-badge">
+              <span class="hist-total-label">Total Pedido:</span>
+              <strong>${totalFmt}</strong>
+            </div>
+            <button class="btn-edit-sm hist-edit-visita" data-vid="${v.id}" data-cid="${clienteId}" title="Editar esta visita" style="flex-shrink:0">✏️ Editar</button>
           </div>
         </div>
         ${filas ? `
@@ -2075,6 +2078,14 @@ function openHistorialModal(clienteId) {
   }).join('');
 
   openModal('modalHistorial');
+
+  // Botones editar visita dentro del historial
+  cont.querySelectorAll('.hist-edit-visita').forEach(btn => {
+    btn.addEventListener('click', () => {
+      closeModal('modalHistorial');
+      openVisitaModal(btn.dataset.cid, btn.dataset.vid);
+    });
+  });
 }
 
 // ── SERVICE WORKER ────────────────────────────────────────────
