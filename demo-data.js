@@ -1487,6 +1487,17 @@
       trabajadorId: '42016714',
       creadoEn: Date.now()
     },
+    {
+      id: 'luz-j-002',
+      codigo: '600000634825',
+      nombre: 'VICTOR ALFONSO VELASQUEZ MEJIA',
+      poblacion: '',
+      dia: 'JUEVES',
+      telefono: '3147380770 - 3205805577',
+      notas: 'Lista: L1 / CONTADO',
+      trabajadorId: '42016714',
+      creadoEn: Date.now()
+    },
 
     // ── VIERNES – LUZ ANDREA ÁLVAREZ ──────────────────────────
     {
