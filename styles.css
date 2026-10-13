@@ -1053,6 +1053,21 @@ body.is-trabajador .admin-only { display: none !important; }
   background: #ffffff;
 }
 
+/* Selector de año más compacto */
+#reportAnio {
+  width: 82px;
+}
+
+/* Animación de aparición para filtros condicionales */
+#reportMesEspecifico:not(.hidden),
+#reportDatesCustom:not(.hidden) {
+  animation: fadeSlideIn 0.2s ease;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── SELECTOR DE 4 SEMANAS DEL MES (ADMIN) ── */
 .week-selector-pills {
   display: flex;

@@ -1570,14 +1570,13 @@ function renderSemana() {
 }
 
 // ── REPORTES Y ACUMULADOS CON FILTROS ───────────────────────────
-function getDateBounds(rango, customDesde, customHasta) {
+function getDateBounds(rango, customDesde, customHasta, mesEsp, anioEsp) {
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
 
   if (rango === 'todas') return { desde: null, hasta: null };
 
   if (rango === 'semana_actual') {
-    const dayOfWeek = now.getDay(); // 0 Dom, 1 Lun, ...
+    const dayOfWeek = now.getDay();
     const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
     const monday = new Date(now);
     monday.setDate(now.getDate() + diffToMonday);
@@ -1602,6 +1601,22 @@ function getDateBounds(rango, customDesde, customHasta) {
     return { desde: firstDay, hasta: lastDay };
   }
 
+  if (rango === 'mes_anterior') {
+    const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const m = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const firstDay = new Date(y, m, 1).toISOString().split('T')[0];
+    const lastDay  = new Date(y, m + 1, 0).toISOString().split('T')[0];
+    return { desde: firstDay, hasta: lastDay };
+  }
+
+  if (rango === 'mes_especifico') {
+    const m   = parseInt(mesEsp  || (now.getMonth() + 1), 10) - 1;
+    const y   = parseInt(anioEsp || now.getFullYear(),    10);
+    const firstDay = new Date(y, m, 1).toISOString().split('T')[0];
+    const lastDay  = new Date(y, m + 1, 0).toISOString().split('T')[0];
+    return { desde: firstDay, hasta: lastDay };
+  }
+
   if (rango === 'personalizado') {
     return { desde: customDesde || null, hasta: customHasta || null };
   }
@@ -1613,9 +1628,30 @@ function initReportFilters() {
   const selRango = document.getElementById('reportRango');
   const selTrab = document.getElementById('reportTrabajador');
   const customWrap = document.getElementById('reportDatesCustom');
+  const mesWrap = document.getElementById('reportMesEspecifico');
+  const selAnio = document.getElementById('reportAnio');
 
   if (!selRango || selRango.dataset.bound) return;
   selRango.dataset.bound = '1';
+
+  // Poblar años disponibles (últimos 3 + año actual)
+  if (selAnio) {
+    const anioActual = new Date().getFullYear();
+    selAnio.innerHTML = '';
+    for (let a = anioActual; a >= anioActual - 3; a--) {
+      const opt = document.createElement('option');
+      opt.value = a;
+      opt.textContent = a;
+      if (a === anioActual) opt.selected = true;
+      selAnio.appendChild(opt);
+    }
+  }
+
+  // Pre-seleccionar mes actual en el picker
+  const selMes = document.getElementById('reportMes');
+  if (selMes) {
+    selMes.value = new Date().getMonth() + 1;
+  }
 
   // Llenar combo de asesores si es Admin
   if (selTrab) {
@@ -1625,10 +1661,16 @@ function initReportFilters() {
   }
 
   const onChange = () => {
-    if (selRango.value === 'personalizado') {
+    const val = selRango.value;
+    if (val === 'personalizado') {
       customWrap.classList.remove('hidden');
     } else {
       customWrap.classList.add('hidden');
+    }
+    if (val === 'mes_especifico') {
+      mesWrap.classList.remove('hidden');
+    } else {
+      mesWrap.classList.add('hidden');
     }
     renderReportes();
   };
@@ -1637,6 +1679,8 @@ function initReportFilters() {
   if (selTrab) selTrab.addEventListener('change', onChange);
   document.getElementById('reportFechaDesde')?.addEventListener('change', onChange);
   document.getElementById('reportFechaHasta')?.addEventListener('change', onChange);
+  document.getElementById('reportMes')?.addEventListener('change', onChange);
+  document.getElementById('reportAnio')?.addEventListener('change', onChange);
 }
 
 function renderReportes() {
@@ -1646,8 +1690,10 @@ function renderReportes() {
   const selTrab = document.getElementById('reportTrabajador')?.value || 'todos';
   const customDesde = document.getElementById('reportFechaDesde')?.value;
   const customHasta = document.getElementById('reportFechaHasta')?.value;
+  const mesEsp  = document.getElementById('reportMes')?.value;
+  const anioEsp = document.getElementById('reportAnio')?.value;
 
-  const bounds = getDateBounds(selRango, customDesde, customHasta);
+  const bounds = getDateBounds(selRango, customDesde, customHasta, mesEsp, anioEsp);
 
   let clientes = loadClientes(true);
   let visitas = loadVisitas();
@@ -1723,12 +1769,20 @@ function renderReportes() {
     return { dia, cnt: clsDia.length, vis: visDia.length, ventaDia };
   });
 
+  const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const rangoTexto = {
     semana_actual: 'Esta Semana (Lunes a Sábado)',
     semana_pasada: 'Semana Pasada',
-    mes_actual: 'Este Mes',
-    todas: 'Histórico Completo',
-    personalizado: `Del ${bounds.desde || 'inicio'} al ${bounds.hasta || 'final'}`
+    mes_actual:    'Este Mes',
+    mes_anterior:  (() => {
+      const now = new Date();
+      const m = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+      const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      return `${MESES_ES[m]} ${y}`;
+    })(),
+    mes_especifico: mesEsp && anioEsp ? `${MESES_ES[parseInt(mesEsp,10)-1]} ${anioEsp}` : 'Mes Seleccionado',
+    todas:          'Histórico Completo',
+    personalizado:  `Del ${bounds.desde || 'inicio'} al ${bounds.hasta || 'final'}`
   }[selRango] || 'Rango Seleccionado';
 
   document.getElementById('reportesContent').innerHTML = `
