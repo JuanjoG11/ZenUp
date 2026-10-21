@@ -68,4 +68,18 @@ create policy "allow_all_clientes"     on clientes     for all using (true) with
 create policy "allow_all_visitas"      on visitas      for all using (true) with check (true);
 create policy "allow_all_productos"    on productos     for all using (true) with check (true);
 
+-- 6. TRIGGER: actualizar automáticamente actualizado_en en cada UPDATE de visitas
+create or replace function set_actualizado_en()
+returns trigger as $$
+begin
+  new.actualizado_en = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_visitas_actualizado_en on visitas;
+create trigger trg_visitas_actualizado_en
+  before update on visitas
+  for each row execute function set_actualizado_en();
+
 -- ✅ Listo. Recarga ZenUp y los datos se sincronizarán automáticamente.

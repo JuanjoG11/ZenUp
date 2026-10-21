@@ -9,6 +9,15 @@
 (function loadDemoData() {
   console.log('🌱 ZenUp Demo: verificando datos de semilla...');
 
+  // ── PROTECCIÓN: no sobreescribir si hay sesión activa ──────
+  const sesionActiva = (() => {
+    try { return !!JSON.parse(localStorage.getItem('ap_session')); } catch { return false; }
+  })();
+  if (sesionActiva) {
+    console.log('ℹ️ ZenUp Demo: sesión activa detectada — semilla omitida para no pisar datos reales.');
+    return;
+  }
+
   // Lista completa de asesores reales
   const trabajadores = [
     { id: 't-000', cedula: '0001',        codigoVentas: '25020', nombre: 'VENTA DE OFICINA',                    zona: '', telefono: '', rol: 'trabajador' },

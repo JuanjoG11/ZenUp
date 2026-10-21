@@ -91,7 +91,7 @@ async function pullVisitas(trabajadorId) {
     if (trabajadorId && trabajadorId !== '0000') {
       query = query.eq('trabajador_id', trabajadorId);
     }
-    const { data, error } = await query.order('fecha', { ascending: false }).limit(500);
+    const { data, error } = await query.order('fecha', { ascending: false }).limit(2000);
     if (error) throw error;
     return data.map(r => ({
       id:           r.id,
@@ -303,13 +303,17 @@ async function pushAllPendingVisitas() {
   if (count > 0) console.log(`✅ Sincronizadas ${count} visitas`);
 }
 
+let _syncInProgress = false;
 async function fullSync() {
+  if (_syncInProgress) return; // Evitar syncs paralelas
   if (!isSupabaseReady()) {
     updateSyncBadge(false);
     return;
   }
+  _syncInProgress = true;
   updateSyncBadge('syncing');
 
+  try {
   // Push visitas locales primero
   await pushAllPendingVisitas();
 
@@ -337,24 +341,12 @@ async function fullSync() {
     const remoteVisitas = await pullVisitas(null);
     if (remoteVisitas) {
       const local = JSON.parse(localStorage.getItem('ap_visitas') || '[]');
-      // Merge: el más reciente (actualizadoEn) gana
+      // Merge: servidor siempre gana para visitas que ya existen en remoto.
+      // Solo conservar locales que aún no llegaron al servidor (creadas offline).
       const mapaRemoto = {};
       remoteVisitas.forEach(rv => { mapaRemoto[rv.id] = rv; });
-      const mapaLocal = {};
-      local.forEach(lv => { mapaLocal[lv.id] = lv; });
-      // Unir todos los IDs
-      const todosIds = new Set([...Object.keys(mapaRemoto), ...Object.keys(mapaLocal)]);
-      const merged = [];
-      todosIds.forEach(id => {
-        const r = mapaRemoto[id];
-        const l = mapaLocal[id];
-        if (r && l) {
-          // Gana el más reciente
-          merged.push((l.actualizadoEn || 0) > (r.actualizadoEn || 0) ? l : r);
-        } else {
-          merged.push(r || l);
-        }
-      });
+      const soloLocales = local.filter(lv => !mapaRemoto[lv.id]);
+      const merged = [...remoteVisitas, ...soloLocales];
       localStorage.setItem('ap_visitas', JSON.stringify(merged));
     }
   } else if (sess) {
@@ -419,6 +411,12 @@ async function fullSync() {
   }
 
   updateSyncBadge(true);
+  } catch (e) {
+    console.warn('Error en fullSync:', e.message);
+    updateSyncBadge(false);
+  } finally {
+    _syncInProgress = false;
+  }
 
   // Refrescar solo la vista activa
   if (typeof currentView !== 'undefined' && typeof renderDashboard === 'function') {

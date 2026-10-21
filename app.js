@@ -529,12 +529,35 @@ function renderAdminDashboard() {
   const diaHoy = todayDia();
 
   // KPIs principales
-  const visitasHoy = todasVisitas.filter(v => v.fecha === hoy);
+  // "Visitas de hoy": primero intentamos fecha exacta de hoy;
+  // si no hay ninguna (fechas guardadas con fecha errónea), usamos
+  // la visita más reciente de cada cliente del día de la semana de hoy.
+  const visitasHoyExactas = todasVisitas.filter(v => v.fecha === hoy);
+  const clientesDelDiaHoy = todosClientes.filter(c => c.dia === diaHoy);
+
+  let visitasHoy;
+  if (visitasHoyExactas.length > 0) {
+    visitasHoy = visitasHoyExactas;
+  } else {
+    // Fallback: última visita de cada cliente del día de hoy (por si la fecha quedó mal)
+    visitasHoy = clientesDelDiaHoy.map(c => {
+      const vsCliente = todasVisitas
+        .filter(v => v.clienteId === c.id)
+        .sort((a, b) => (b.actualizadoEn || b.creadoEn || 0) - (a.actualizadoEn || a.creadoEn || 0));
+      return vsCliente[0] || null;
+    }).filter(Boolean);
+  }
+
   const completadasHoy = visitasHoy.filter(v => v.estado === 'completada').length;
-  const clientesHoy = todosClientes.filter(c => c.dia === diaHoy).length;
+  const clientesHoy = clientesDelDiaHoy.length;
   const ventaHoy = visitasHoy.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
-  const pendientesHoy = todosClientes.filter(c => c.dia === diaHoy && !visitasHoy.some(v => v.clienteId === c.id && v.estado === 'completada')).length;
-  const ventaTotal = todasVisitas.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
+  const pendientesHoy = clientesDelDiaHoy.filter(c =>
+    !visitasHoy.some(v => v.clienteId === c.id && v.estado === 'completada')
+  ).length;
+  // Acumulado del mes: solo visitas completadas dentro del mes actual
+  const primerDiaMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const ultimoDiaMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+  const ventaTotal = todasVisitas.filter(v => v.estado === 'completada' && v.fecha >= primerDiaMes && v.fecha <= ultimoDiaMes).reduce((s, v) => s + (v.totalPedido || 0), 0);
   const pctGlobal = clientesHoy ? Math.round((completadasHoy / clientesHoy) * 100) : 0;
 
   document.getElementById('statsRow').innerHTML = `
@@ -583,11 +606,25 @@ function renderAdminDashboard() {
     const cls = todosClientes.filter(c => c.trabajadorId === t.cedula);
     const clsHoy = cls.filter(c => c.dia === diaHoy);
     const vts = todasVisitas.filter(v => cls.some(c => c.id === v.clienteId));
-    const vtsHoy = vts.filter(v => v.fecha === hoy);
+
+    // Visitas "de hoy": primero fecha exacta, si no hay → última visita de cada cliente de hoy
+    const vtsHoyExactas = vts.filter(v => v.fecha === hoy);
+    let vtsHoy;
+    if (vtsHoyExactas.length > 0) {
+      vtsHoy = vtsHoyExactas;
+    } else {
+      vtsHoy = clsHoy.map(c => {
+        const vsCliente = vts
+          .filter(v => v.clienteId === c.id)
+          .sort((a, b) => (b.actualizadoEn || b.creadoEn || 0) - (a.actualizadoEn || a.creadoEn || 0));
+        return vsCliente[0] || null;
+      }).filter(Boolean);
+    }
+
     const doneHoy = vtsHoy.filter(v => v.estado === 'completada').length;
     const pendVend = clsHoy.length - doneHoy;
     const $hoy = vtsHoy.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
-    const $acum = vts.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
+    const $acum = vts.filter(v => v.estado === 'completada' && v.fecha >= primerDiaMes && v.fecha <= ultimoDiaMes).reduce((s, v) => s + (v.totalPedido || 0), 0);
     const pct = clsHoy.length ? Math.round((doneHoy / clsHoy.length) * 100) : 0;
     const inicial = (t.nombre || 'A')[0].toUpperCase();
 
@@ -633,8 +670,8 @@ function setAdminSemana(semanaNum) {
 }
 
 // ── DRILL-DOWN: PANEL DEL ASESOR ─────────────────────────────
-let asesorPanelSemana = 1;
-let asesorPanelDia = '';
+let asesorPanelSemana = 'ALL';
+let asesorPanelDia = todayDia(); // Pre-seleccionar el día actual al abrir
 
 function openAsesorPanel(cedula) {
   const trabajadores = loadTrabajadores();
@@ -662,7 +699,10 @@ function openAsesorPanel(cedula) {
 
   const completadasDia = vtsDia.filter(v => v.estado === 'completada');
   const ventaDia = completadasDia.reduce((s, v) => s + (v.totalPedido || 0), 0);
-  const ventaAcumMes = vtsAsesor.filter(v => v.estado === 'completada').reduce((s, v) => s + (v.totalPedido || 0), 0);
+  // Acumulado del mes: solo visitas completadas en el mes actual
+  const primerDiaMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const ultimoDiaMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+  const ventaAcumMes = vtsAsesor.filter(v => v.estado === 'completada' && v.fecha >= primerDiaMes && v.fecha <= ultimoDiaMes).reduce((s, v) => s + (v.totalPedido || 0), 0);
 
   // Header info
   document.getElementById('asesorPanelAvatar').textContent = (t.nombre || 'A')[0].toUpperCase();
@@ -1215,7 +1255,9 @@ function openVisitaModal(clienteId, visitaId = null) {
 
   document.getElementById('visitaId').value = visita ? visita.id : '';
   document.getElementById('visitaClienteId').value = cliente ? cliente.id : (visita ? visita.clienteId : '');
-  document.getElementById('visitaFecha').value = visita ? visita.fecha : hoy;
+  // La fecha siempre es hoy — una visita se registra el día en que se hace,
+  // no la fecha en que se creó el borrador.
+  document.getElementById('visitaFecha').value = hoy;
   document.getElementById('visitaEstado').value = visita ? visita.estado : 'en_curso';
   document.getElementById('visitaNotas').value = visita ? visita.notas || '' : '';
 

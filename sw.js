@@ -1,5 +1,5 @@
 ﻿/* ZenUp Service Worker – Offline First */
-const CACHE = 'ZenUp-v1';
+const CACHE = 'ZenUp-v2';
 const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/manifest.json'];
 
 self.addEventListener('install', e => {
@@ -18,6 +18,10 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Ignorar URLs que no sean http/https (ej: chrome-extension://)
+  const url = new URL(e.request.url);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
   e.respondWith(
     caches.match(e.request).then(cached => {
       const network = fetch(e.request).then(res => {
