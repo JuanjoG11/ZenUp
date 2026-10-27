@@ -142,7 +142,14 @@ function loadProductos() {
   return p;
 }
 function saveProductos(d) { DB.set('ap_productos', d); }
-function loadVisitas() { return DB.get('ap_visitas', []); }
+function loadVisitas() {
+  // Si el admin tiene visitas en caché de memoria (evita límite de localStorage), usarlas
+  const sess = getSession();
+  if (sess && sess.rol === 'admin' && window._adminVisitasCache && window._adminVisitasCache.length > 0) {
+    return window._adminVisitasCache;
+  }
+  return DB.get('ap_visitas', []);
+}
 function saveVisitas(d) { DB.set('ap_visitas', d); }
 function loadConfig() { return DB.getObj('ap_config', { codigo: '', nombre: 'Asesor', zona: '' }); }
 function saveConfig(d) { DB.set('ap_config', d); }
@@ -153,7 +160,15 @@ function fmt$(n) {
   if (!n && n !== 0) return '-';
   return '$ ' + Number(n).toLocaleString('es-CO');
 }
-function todayISO() { return new Date().toISOString().split('T')[0]; }
+function localISO(d) {
+  // Usa hora LOCAL para evitar desfase UTC (-5 en Colombia)
+  const dd = d || new Date();
+  const y  = dd.getFullYear();
+  const m  = String(dd.getMonth() + 1).padStart(2, '0');
+  const day = String(dd.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function todayISO() { return localISO(); }
 function todayDia() { return DIA_MAP[new Date().getDay()] || 'LUNES'; }
 function diasLabel(d) {
   const m = { LUNES:'Lun', MARTES:'Mar', 'MIÉRCOLES':'Mié', JUEVES:'Jue', VIERNES:'Vie', 'SÁBADO':'Sáb' };
@@ -384,6 +399,30 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('saveConfigBtn').addEventListener('click', saveConfigData);
   document.getElementById('btnClearData').addEventListener('click', clearAllData);
 
+  // Botón sincronizar en Reportes — para admin limpia caché de visitas antes de traer todo fresco
+  const btnSyncReportes = document.getElementById('btnSyncReportes');
+  if (btnSyncReportes) {
+    btnSyncReportes.addEventListener('click', () => {
+      const sess = getSession();
+      if (sess && sess.rol === 'admin') {
+        // Admin: limpiar caché en memoria y localStorage para forzar descarga limpia
+        window._adminVisitasCache = null;
+        localStorage.removeItem('ap_visitas');
+      }
+      showToast('Sincronizando datos frescos...', '');
+      btnSyncReportes.disabled = true;
+      btnSyncReportes.textContent = '⏳ Sincronizando...';
+      if (typeof fullSync === 'function') {
+        fullSync().then(() => {
+          renderReportes();
+          showToast('Sincronización completa ✓', 'success');
+          btnSyncReportes.disabled = false;
+          btnSyncReportes.textContent = '🔄 Sincronizar';
+        });
+      }
+    });
+  }
+
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 });
 
@@ -555,8 +594,8 @@ function renderAdminDashboard() {
     !visitasHoy.some(v => v.clienteId === c.id && v.estado === 'completada')
   ).length;
   // Acumulado del mes: solo visitas completadas dentro del mes actual
-  const primerDiaMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-  const ultimoDiaMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+  const primerDiaMes = localISO(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const ultimoDiaMes = localISO(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
   const ventaTotal = todasVisitas.filter(v => v.estado === 'completada' && v.fecha >= primerDiaMes && v.fecha <= ultimoDiaMes).reduce((s, v) => s + (v.totalPedido || 0), 0);
   const pctGlobal = clientesHoy ? Math.round((completadasHoy / clientesHoy) * 100) : 0;
 
@@ -700,8 +739,8 @@ function openAsesorPanel(cedula) {
   const completadasDia = vtsDia.filter(v => v.estado === 'completada');
   const ventaDia = completadasDia.reduce((s, v) => s + (v.totalPedido || 0), 0);
   // Acumulado del mes: solo visitas completadas en el mes actual
-  const primerDiaMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-  const ultimoDiaMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+  const primerDiaMes = localISO(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const ultimoDiaMes = localISO(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
   const ventaAcumMes = vtsAsesor.filter(v => v.estado === 'completada' && v.fecha >= primerDiaMes && v.fecha <= ultimoDiaMes).reduce((s, v) => s + (v.totalPedido || 0), 0);
 
   // Header info
@@ -1613,49 +1652,46 @@ function renderSemana() {
 
 // ── REPORTES Y ACUMULADOS CON FILTROS ───────────────────────────
 function getDateBounds(rango, customDesde, customHasta, mesEsp, anioEsp) {
+  // Usamos hora LOCAL en todo para que Colombia (UTC-5) no desfase las fechas
   const now = new Date();
 
   if (rango === 'todas') return { desde: null, hasta: null };
 
   if (rango === 'semana_actual') {
-    const dayOfWeek = now.getDay();
+    const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun … 6=Sáb (hora local)
     const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
-    const monday = new Date(now);
-    monday.setDate(now.getDate() + diffToMonday);
-    const saturday = new Date(monday);
-    saturday.setDate(monday.getDate() + 5);
-    return { desde: monday.toISOString().split('T')[0], hasta: saturday.toISOString().split('T')[0] };
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    const saturday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 5);
+    return { desde: localISO(monday), hasta: localISO(saturday) };
   }
 
   if (rango === 'semana_pasada') {
     const dayOfWeek = now.getDay();
     const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek) - 7;
-    const monday = new Date(now);
-    monday.setDate(now.getDate() + diffToMonday);
-    const saturday = new Date(monday);
-    saturday.setDate(monday.getDate() + 5);
-    return { desde: monday.toISOString().split('T')[0], hasta: saturday.toISOString().split('T')[0] };
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    const saturday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 5);
+    return { desde: localISO(monday), hasta: localISO(saturday) };
   }
 
   if (rango === 'mes_actual') {
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    const firstDay = localISO(new Date(now.getFullYear(), now.getMonth(), 1));
+    const lastDay  = localISO(new Date(now.getFullYear(), now.getMonth() + 1, 0));
     return { desde: firstDay, hasta: lastDay };
   }
 
   if (rango === 'mes_anterior') {
     const y = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
     const m = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-    const firstDay = new Date(y, m, 1).toISOString().split('T')[0];
-    const lastDay  = new Date(y, m + 1, 0).toISOString().split('T')[0];
+    const firstDay = localISO(new Date(y, m, 1));
+    const lastDay  = localISO(new Date(y, m + 1, 0));
     return { desde: firstDay, hasta: lastDay };
   }
 
   if (rango === 'mes_especifico') {
     const m   = parseInt(mesEsp  || (now.getMonth() + 1), 10) - 1;
     const y   = parseInt(anioEsp || now.getFullYear(),    10);
-    const firstDay = new Date(y, m, 1).toISOString().split('T')[0];
-    const lastDay  = new Date(y, m + 1, 0).toISOString().split('T')[0];
+    const firstDay = localISO(new Date(y, m, 1));
+    const lastDay  = localISO(new Date(y, m + 1, 0));
     return { desde: firstDay, hasta: lastDay };
   }
 
@@ -1728,6 +1764,19 @@ function initReportFilters() {
 function renderReportes() {
   initReportFilters();
 
+  // Admin sin caché en memoria → disparar sync automático y mostrar loading
+  const sessCheck = getSession();
+  if (sessCheck && sessCheck.rol === 'admin' &&
+      (!window._adminVisitasCache || window._adminVisitasCache.length === 0) &&
+      typeof fullSync === 'function' && navigator.onLine) {
+    document.getElementById('reportesContent').innerHTML =
+      '<div class="report-card" style="text-align:center;padding:32px;color:#9E9E9E">' +
+      '<p style="font-size:1.5rem;margin:0">⏳</p>' +
+      '<p style="margin:8px 0 0">Cargando datos desde el servidor...</p></div>';
+    fullSync().then(() => renderReportes());
+    return;
+  }
+
   const selRango = document.getElementById('reportRango')?.value || 'semana_actual';
   const selTrab = document.getElementById('reportTrabajador')?.value || 'todos';
   const customDesde = document.getElementById('reportFechaDesde')?.value;
@@ -1745,15 +1794,35 @@ function renderReportes() {
   // Filtrar por asesor
   if (sess.rol !== 'admin') {
     clientes = clientes.filter(c => c.trabajadorId === sess.cedula);
-    visitas = visitas.filter(v => clientes.some(c => c.id === v.clienteId));
+    // Incluir visitas que pertenecen al asesor por clienteId O directamente por trabajadorId
+    const clienteIds = new Set(clientes.map(c => c.id));
+    visitas = visitas.filter(v =>
+      clienteIds.has(v.clienteId) ||
+      v.trabajadorId === sess.cedula
+    );
   } else if (selTrab !== 'todos') {
     clientes = clientes.filter(c => c.trabajadorId === selTrab);
     visitas = visitas.filter(v => clientes.some(c => c.id === v.clienteId));
   }
 
-  // Filtrar por fechas
-  if (bounds.desde) visitas = visitas.filter(v => v.fecha >= bounds.desde);
-  if (bounds.hasta) visitas = visitas.filter(v => v.fecha <= bounds.hasta);
+  // Filtrar por fechas — normalizar v.fecha a YYYY-MM-DD antes de comparar
+  const normFecha = (f) => {
+    if (!f) return '';
+    // Si viene como timestamp (número o ISO con hora), extraer solo la fecha local
+    if (typeof f === 'number') return localISO(new Date(f));
+    if (typeof f === 'string' && f.length > 10) return localISO(new Date(f));
+    return String(f).substring(0, 10); // Ya es YYYY-MM-DD
+  };
+
+  if (bounds.desde || bounds.hasta) {
+    visitas = visitas.map(v => ({ ...v, _fechaNorm: normFecha(v.fecha) }));
+    // DEBUG temporal — ver en consola qué fechas hay vs qué rango se busca
+    const fechasMuestra = [...new Set(visitas.map(v => v._fechaNorm))].sort().reverse().slice(0, 10);
+    console.log(`[Reportes] rango: ${bounds.desde} → ${bounds.hasta} | muestras: ${fechasMuestra.join(', ')} | total antes filtro: ${visitas.length}`);
+    if (bounds.desde) visitas = visitas.filter(v => v._fechaNorm >= bounds.desde);
+    if (bounds.hasta) visitas = visitas.filter(v => v._fechaNorm <= bounds.hasta);
+    console.log(`[Reportes] total después de filtro: ${visitas.length}`);
+  }
 
   const totalVisitas = visitas.length;
   const completadas = visitas.filter(v => v.estado === 'completada').length;
@@ -1827,7 +1896,41 @@ function renderReportes() {
     personalizado:  `Del ${bounds.desde || 'inicio'} al ${bounds.hasta || 'final'}`
   }[selRango] || 'Rango Seleccionado';
 
-  document.getElementById('reportesContent').innerHTML = `
+  // Banner de diagnóstico cuando no hay datos (ayuda a detectar la causa)
+  const todasLasVisitas = loadVisitas();
+  let diagBanner = '';
+  if (totalVisitas === 0 && todasLasVisitas.length > 0) {
+    const visitasDelAsesor = sess.rol !== 'admin'
+      ? todasLasVisitas.filter(v => v.trabajadorId === sess.cedula || clientes.some(c => c.id === v.clienteId))
+      : todasLasVisitas;
+    const tieneVisitasFueraRango = bounds.desde && visitasDelAsesor.some(v => {
+      const fn = normFecha(v.fecha);
+      return fn < bounds.desde || fn > (bounds.hasta || '9999');
+    });
+    if (visitasDelAsesor.length === 0 && sess.rol !== 'admin') {
+      diagBanner = `<div class="report-card" style="background:#FFF3E0;border-left:4px solid #FF9800">
+        <p style="margin:0;color:#E65100;font-weight:600">⚠️ Sin clientes asignados</p>
+        <p style="margin:6px 0 0;font-size:0.85rem;color:#555">
+          Tu usuario (<strong>${sess.cedula}</strong>) no tiene clientes asignados en Supabase.
+          Pide al administrador que te asigne clientes, o sincroniza de nuevo.
+        </p>
+      </div>`;
+    } else if (tieneVisitasFueraRango) {
+      // Mostrar cuáles son las fechas más recientes para orientar al usuario
+      const fechasRecientes = [...new Set(visitasDelAsesor.map(v => normFecha(v.fecha)))]
+        .filter(Boolean).sort().reverse().slice(0, 5);
+      diagBanner = `<div class="report-card" style="background:#E3F2FD;border-left:4px solid #1565C0">
+        <p style="margin:0;color:#1565C0;font-weight:600">ℹ️ Tus visitas están fuera del rango seleccionado</p>
+        <p style="margin:6px 0 0;font-size:0.85rem;color:#555">
+          Tienes <strong>${visitasDelAsesor.length}</strong> visita(s) — rango buscado: <strong>${bounds.desde}</strong> a <strong>${bounds.hasta}</strong><br>
+          Fechas más recientes encontradas: <strong>${fechasRecientes.join(', ') || 'sin fecha'}</strong><br>
+          Cambia el rango a <em>Histórico Completo</em> para verlas todas.
+        </p>
+      </div>`;
+    }
+  }
+
+  document.getElementById('reportesContent').innerHTML = diagBanner + `
     <div class="report-card">
       <h4>📊 Acumulado y Resumen (${rangoTexto})</h4>
       <div class="report-row"><span>Total clientes base</span><strong>${clientes.length}</strong></div>

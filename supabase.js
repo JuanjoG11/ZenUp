@@ -294,9 +294,15 @@ async function pushAllPendingVisitas() {
   if (!isSupabaseReady()) return;
   const visitas = JSON.parse(localStorage.getItem('ap_visitas') || '[]');
   const sess = JSON.parse(localStorage.getItem('ap_session') || 'null');
+  const esAdmin = sess && sess.rol === 'admin';
   let count = 0;
   for (const v of visitas) {
-    const vConTrabajador = { ...v, trabajadorId: sess ? sess.cedula : '' };
+    // IMPORTANTE: el admin NO sobreescribe el trabajadorId original de cada visita.
+    // Solo se asigna la cédula del asesor si la visita aún no tiene trabajadorId.
+    const trabajadorId = esAdmin
+      ? (v.trabajadorId || '')      // conservar el original; el admin no pisa ajeno
+      : (sess ? sess.cedula : (v.trabajadorId || ''));
+    const vConTrabajador = { ...v, trabajadorId };
     const ok = await syncVisita(vConTrabajador);
     if (ok) count++;
   }
@@ -313,12 +319,17 @@ async function fullSync() {
   _syncInProgress = true;
   updateSyncBadge('syncing');
 
-  try {
-  // Push visitas locales primero
-  await pushAllPendingVisitas();
-
   const sess = JSON.parse(localStorage.getItem('ap_session') || 'null');
   const isAdmin = sess && sess.rol === 'admin';
+
+  try {
+  // Solo los asesores suben visitas al servidor.
+  // El admin NUNCA hace push de visitas para evitar pisar trabajadorId ajenos.
+  if (!isAdmin) {
+    await pushAllPendingVisitas();
+  }
+
+  // sess e isAdmin ya definidos arriba
 
   if (isAdmin) {
     // Admin: traer todo del servidor
@@ -340,14 +351,16 @@ async function fullSync() {
 
     const remoteVisitas = await pullVisitas(null);
     if (remoteVisitas) {
-      const local = JSON.parse(localStorage.getItem('ap_visitas') || '[]');
-      // Merge: servidor siempre gana para visitas que ya existen en remoto.
-      // Solo conservar locales que aún no llegaron al servidor (creadas offline).
-      const mapaRemoto = {};
-      remoteVisitas.forEach(rv => { mapaRemoto[rv.id] = rv; });
-      const soloLocales = local.filter(lv => !mapaRemoto[lv.id]);
-      const merged = [...remoteVisitas, ...soloLocales];
-      localStorage.setItem('ap_visitas', JSON.stringify(merged));
+      // Admin: las visitas NO se guardan en localStorage (son demasiadas y superan el límite de 5MB).
+      // Se guardan en memoria global y se usan directamente en renderReportes y el dashboard.
+      window._adminVisitasCache = remoteVisitas;
+      // Solo conservar en localStorage las visitas propias del admin (si las tiene)
+      const soloAdmin = remoteVisitas.filter(v => v.trabajadorId === '0000' || v.trabajadorId === '');
+      try {
+        localStorage.setItem('ap_visitas', JSON.stringify(soloAdmin));
+      } catch(e) {
+        localStorage.removeItem('ap_visitas'); // si ni eso cabe, vaciar
+      }
     }
   } else if (sess) {
     // Asesor: push primero, luego traer SUS clientes, productos y visitas del servidor
