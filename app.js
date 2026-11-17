@@ -1816,12 +1816,19 @@ function renderReportes() {
 
   if (bounds.desde || bounds.hasta) {
     visitas = visitas.map(v => ({ ...v, _fechaNorm: normFecha(v.fecha) }));
-    // DEBUG temporal — ver en consola qué fechas hay vs qué rango se busca
-    const fechasMuestra = [...new Set(visitas.map(v => v._fechaNorm))].sort().reverse().slice(0, 10);
-    console.log(`[Reportes] rango: ${bounds.desde} → ${bounds.hasta} | muestras: ${fechasMuestra.join(', ')} | total antes filtro: ${visitas.length}`);
+    const totalAntes = visitas.length;
+    const fechasMuestra = [...new Set(visitas.map(v => v._fechaNorm))].sort().reverse().slice(0, 8);
     if (bounds.desde) visitas = visitas.filter(v => v._fechaNorm >= bounds.desde);
     if (bounds.hasta) visitas = visitas.filter(v => v._fechaNorm <= bounds.hasta);
-    console.log(`[Reportes] total después de filtro: ${visitas.length}`);
+    // Guardar info de debug para mostrar en pantalla
+    window._debugReportes = {
+      rango: `${bounds.desde} → ${bounds.hasta}`,
+      muestras: fechasMuestra,
+      antes: totalAntes,
+      despues: visitas.length
+    };
+  } else {
+    window._debugReportes = null;
   }
 
   const totalVisitas = visitas.length;
@@ -1896,35 +1903,32 @@ function renderReportes() {
     personalizado:  `Del ${bounds.desde || 'inicio'} al ${bounds.hasta || 'final'}`
   }[selRango] || 'Rango Seleccionado';
 
-  // Banner de diagnóstico cuando no hay datos (ayuda a detectar la causa)
+  // Banner de diagnóstico cuando no hay datos
   const todasLasVisitas = loadVisitas();
   let diagBanner = '';
   if (totalVisitas === 0 && todasLasVisitas.length > 0) {
     const visitasDelAsesor = sess.rol !== 'admin'
       ? todasLasVisitas.filter(v => v.trabajadorId === sess.cedula || clientes.some(c => c.id === v.clienteId))
       : todasLasVisitas;
-    const tieneVisitasFueraRango = bounds.desde && visitasDelAsesor.some(v => {
-      const fn = normFecha(v.fecha);
-      return fn < bounds.desde || fn > (bounds.hasta || '9999');
-    });
+
+    // Siempre mostrar las fechas reales encontradas vs el rango buscado
+    const fechasReales = [...new Set(visitasDelAsesor.map(v => normFecha(v.fecha)))]
+      .filter(Boolean).sort().reverse().slice(0, 8);
+
     if (visitasDelAsesor.length === 0 && sess.rol !== 'admin') {
       diagBanner = `<div class="report-card" style="background:#FFF3E0;border-left:4px solid #FF9800">
         <p style="margin:0;color:#E65100;font-weight:600">⚠️ Sin clientes asignados</p>
         <p style="margin:6px 0 0;font-size:0.85rem;color:#555">
           Tu usuario (<strong>${sess.cedula}</strong>) no tiene clientes asignados en Supabase.
-          Pide al administrador que te asigne clientes, o sincroniza de nuevo.
         </p>
       </div>`;
-    } else if (tieneVisitasFueraRango) {
-      // Mostrar cuáles son las fechas más recientes para orientar al usuario
-      const fechasRecientes = [...new Set(visitasDelAsesor.map(v => normFecha(v.fecha)))]
-        .filter(Boolean).sort().reverse().slice(0, 5);
+    } else {
       diagBanner = `<div class="report-card" style="background:#E3F2FD;border-left:4px solid #1565C0">
-        <p style="margin:0;color:#1565C0;font-weight:600">ℹ️ Tus visitas están fuera del rango seleccionado</p>
-        <p style="margin:6px 0 0;font-size:0.85rem;color:#555">
-          Tienes <strong>${visitasDelAsesor.length}</strong> visita(s) — rango buscado: <strong>${bounds.desde}</strong> a <strong>${bounds.hasta}</strong><br>
-          Fechas más recientes encontradas: <strong>${fechasRecientes.join(', ') || 'sin fecha'}</strong><br>
-          Cambia el rango a <em>Histórico Completo</em> para verlas todas.
+        <p style="margin:0;color:#1565C0;font-weight:600">🔍 Diagnóstico: 0 visitas en este rango</p>
+        <p style="margin:6px 0 0;font-size:0.85rem;color:#333;line-height:1.6">
+          <b>Rango buscado:</b> <code>${bounds.desde || 'inicio'}</code> → <code>${bounds.hasta || 'final'}</code><br>
+          <b>Total visitas en memoria:</b> ${visitasDelAsesor.length}<br>
+          <b>Fechas más recientes encontradas:</b> <code>${fechasReales.join(', ') || 'ninguna'}</code>
         </p>
       </div>`;
     }
